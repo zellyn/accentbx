@@ -1,0 +1,1557 @@
+\title{Package \textsc{accentbx}: some problems with accents
+in \TeX{} and how to solve them}
+\author{A.S. Berdnikov}
+\affiliation{Institute of Analytical Instrumentation\\
+             Rizskii pr. 26\\
+             198103 St.Petersburg\\
+             Russia\\
+             \texttt{berd@ianin.spb.su} or \\
+             \texttt{berdn@ptslab.ioffe.rssi.ru}}
+\authorhead{A.S.Berdnikov}
+\titlehead{Package \textsc{accentbx}}
+\maketitle
+\date{}
+\def\AmS{$\cal AMS$}
+
+\chardef\bs=`\\
+\chardef\bh=`\^
+
+\font\cyrfont=wncyr10
+\font\cmfont=cmr10
+
+\def\TA#1{\upaccent{{\tiny a}}{#1}}
+\def\tA#1{\upaccent{\aboxsplitup{\tiny a}}{#1}}
+\def\burg{b\upaccent{\Aboxshift{\char"15}}{\markchar}g}
+\def\BURG{B\upaccent{\Aboxshift{\char"15}}{\MARKCHAR}G}
+\def\Burg{b\upaccent{\Aboxshift{\char"15}}{\marktwochar bg}g}
+\def\Tcomma#1{\upaccent{,}{#1}}
+\def\tcomma#1{\upaccent{\Aboxsplit{\Aboxbase{,}}}{#1}}
+
+\makeatletter
+\def\hackersmile{\@ifnextchar[{\@hackersmile}{\@hackersmile[8]}}
+\def\@hackersmile[#1]{\hbox{%
+   \unitlength=1pt\relax
+   \unitlength=#1\unitlength
+   \divide\unitlength by 10\relax
+   \thicklines
+   \raise -3\unitlength \hbox{%
+   \begin{picture}(12,12)(-6,-6)
+   \put(0,0){\circle{10}}
+   \put(-2,1.75){\circle*{1}}
+   \put(2,1.75){\circle*{1}}
+   \thicklines
+   \put(-2.75,3){\line(1,0){1.5}}
+   \put(2.75,3){\line(-1,0){1.5}}
+   \put(0,-1){\line(0,1){3}}
+   \put(-2.5,-2.5){\line(1,0){5}}
+   \put(-2.5,-2.5){\line(0,1){1}}
+   \put(2.5,-2.5){\line(0,1){1}}
+   \end{picture}%
+}}}
+\makeatother
+
+
+\begin{abstract}
+Weak points of \TeX{} internal command \verb?\accent?
+are investigated. It appears that some features of \verb?\accent?
+prevent to construct specific letters
+which require several accents simultaneously.
+Special macro which emulates the work of \verb?\accent?,
+additional macro for fine tuning of accents,
+\textsf{if-then-else} structures which enable to put correct accents
+depending on uppercase/lowercase state and font family conditions, etc.,
+are described.
+Closely related to it are the accents for I/i and J/j which are different
+for uppercase and lowercase letters, and similar
+problem occurs for so-called \textit{title letters}.
+The whole package is coded in such a way
+that in works for {\sl Plain},
+\AmS\TeX, etc., as well, not only for \LaTeXe.
+\end{abstract}
+
+\section{Introduction\label{S-Intro}}
+
+The nearly inevitable feature of cyrillic encodings is that some cyrillic
+letters (for example, the majority of accented letters) should be assembled
+from pieces~--- accents, modifiers, composite elements, etc.
+There are the cases (not too rare) where {\em several} elements should be
+attached to the same base character. The typical examples are the stresses
+over accented letters, some specific characters from Nivh language,
+multi-level accents specific for Saam language, stroke-type modifiers
+added to some letters, and so on~--- some of these constructions
+are shown here:
+\begin{center}
+{\cmfont
+  \upaccent{\aboxshift{\char"13}}%
+           {\upaccent{\aboxshift{\char"7F}}%
+                     {\cyrfont E}%
+           }%
+},\qquad
+{\cmfont
+  \upaccent{\aboxshift{\char"13}}%
+           {\upaccent{\aboxshift{\char"16}}%
+                     {\cyrfont I}%
+           }%
+},\qquad
+{\cmfont
+  \upaccent{\aboxshift{\char"7D}}%
+       {\baseaccent{\aboxjoindn[0.1ex]{\kern-0.05ex\char"18}}%
+               {\makeaccent[Cs]<,,0.15em,>{\aboxrule{0.3em}}%
+                           {\cyrfont G}%
+               }%
+       }%
+},\qquad
+{\cmfont
+  \upaccent{\aboxsplit{.}}%
+           {\makeaccent[Cs]<,,0.03em,>{\aboxrule{0.4em}}%
+                       {\cyrfont H}%
+           }%
+},\qquad
+{\cmfont
+  \upaccent{\aboxshift{\char"16}}%
+           {\upaccent{\aboxshift{\char"7F}}%
+                     {\cyrfont O}%
+           }%
+},\qquad
+{\cmfont
+  \upaccentbar{\upaccent{\aboxshift{\char"7F}}{\cyrfont \char3}{\cyrfont A}}%
+},\qquad
+\dots
+\end{center}
+
+In addition there are the cases
+where the accent is positioned {\em between} two characters~---
+for example, in German \cite{DC} there is the abbreviation
+\textit{-\burg} which substitutes \textit{-burg}
+when necessary\footnote{In first version of this paper
+published in Proceedings of Euro\TeX-97 there was an error:
+it states that sometimes in Serbian language
+the accents {\em acute}, {\em grave}, {\em double-grave}
+and {\em frown} (reverted breve) which are the specific
+Serbian stresses, may be positioned in a similar manner:
+{\cmfont
+{\cyrfont b}\upaccent{\aboxshift{\char"13}}{\markchar}{\cyrfont rvno}%
+},
+{\cmfont
+{\cyrfont mr}\upaccent{\aboxshift{\char"12}}{\markchar}{\cyrfont tvats}%
+},
+{\cmfont
+{\cyrfont mr}\upaccent{\aboxshift{\char"12\kern-0.35em\char"12}}{\markchar}{\cyrfont kva}%
+},
+{\cmfont
+{\cyrfont zr}\upaccent{\aboxshift{\char"15}}{\markchar}{\cyrfont tva}%
+},
+\dots
+More detailed investigation shows that in such cases
+corresponding stresses are placed strictly over the letter
+`{\cyrfont r}'. But in Church Slavonic and Old Slavonic
+the accents {\em paerok} and {\em titlo-in-letters}
+placed between two letters are not a rare case.}.
+Such effect could be simulated by a special invisible character
+with zero width and corresponding height
+as it is described in the documentation for DC/EC fonts \cite{DC},
+but invisible rule with zero width or
+\verb?\phantom? command are better for this purpose~---
+unfortunately \verb?\accent? cannot place accents over them.
+
+Another problem arises when we need the accent above the letters
+I/i or J/j~--- these letters contain dots for the lowercase form
+but do not contain it for the uppercase form. It is not a problem
+when there is no automatic uppercase and lowercase conversion
+of the user defined text since {\em dottless} lowercase forms
+are available in Computer Modern typefaces~---
+but, for example, the Khakassian uppercase `\.I'
+could be unexpectedly transformed into
+double-dotted `i' after {\tt\bs{}lowercase} used somethere:
+\begin{center}
+\begin{tabular}{c@{ = }cc@{ = }cc@{ = }c}
+{\tt\bs{}.I} &  \.I
+&
+{\tt\bs{}uppercase\{\bs{}.I\}} & \uppercase{\.I}
+&
+{\tt\bs{}lowercase\{\bs{}.I\}} & \lowercase{\.I}
+\end{tabular}
+\end{center}
+
+Summary: the primitive \verb?\accent? command cannot
+be used for such constructions
+(it cannot analyze uppercase/lowercase characters,
+it puts accents only over the letters
+and atomic symbols ignoring the composite characters
+like \verb?\hbox? or \verb?\vrule? and it cannot
+put accent over already accented characters).
+To overcome these restrictions and to support inside one encoding
+as much cyrillic writing systems as possible, it is necessary
+to simulate the work of the command \verb?\accent?
+by some other \TeX{} tools.
+
+Finally, there is some problem which does not relate directly
+to accents~--- This is the problem of so-called \textit{title letters}
+which are not supported by \TeX{} when
+the commands \verb?\lowercase? and \verb?\uppercase? work.
+Although it is not the problem with \verb?\accent?
+(and hence corresponding macro are not included into \textsc{accentbx}),
+it closely relates to the problem with accented I/i and J/j~--- so,
+this problem and its solution is discussed in section~\ref{S-title}.
+
+\section{How {\tt\bs{}accent} works\label{S-accent}}
+
+Before we proceed to simulate the work of \verb?\accent? it may be a good
+idea to see what particular operations are performed by this internal
+\TeX{} command. Its syntaxis is specified as \cite{TEXB,TOPIC}:
+\begin{center}
+{\tt\bs{}accent}$\left<\hbox{\em 8-bit number}\right>
+                \left<\hbox{\em optional assignments}\right>
+                \left<\hbox{\em character}\right>$%
+\end{center}
+{\em Character} is a letter over which the accent should be placed.
+The 8-bit number is the code from the current font which corresponds
+to the character used as the accent.
+The optional assignments between the {\em 8-bit number} and
+the {\em character} could contain, in particular, the font switching
+commands which enable to take the accent defined by
+{\em 8-bit number} and the accented object defined by {\em character}
+from different fonts
+(although it cannot contain {\tt\bs{}setbox} assignments).
+
+If the assignments are not followed by a {\em character}
+(where {\em character} is the token with {\tt\bs{}catcode=11}
+or {\tt\bs{}catcode=12}, command {\tt\bs{}char}, \TeX{} command
+created through {\tt\bs{}chardef}, {\tt\bs{}noboundary}
+command), \TeX{} considers {\tt\bs{}accent} as the equivalent
+to {\tt\bs{}char$\left<\hbox{\em 8-bit number}\right>$} command.
+Otherwise the character which follows the
+assignment is accented by the character that corresponds to
+{\em 8-bit number}. The accenting algorithm is the
+following\footnote{This description with minor corrections
+belongs to Bernd Raichle and
+was extracted by him through investigation of the original Web
+code for \TeX.}:
+\begin{enumerate}
+\item If the {\em character} has a height equal to
+      \verb?\fontdimen5? for the font where the accent is selected
+      (which is {\tt 1ex} for this font), the accent is
+      centered horizontally over the box corresponding
+      to the {\em character} and no additional vertical
+      shift is inserted.
+\item
+      If the {\em character} has a height unequal to {\tt 1ex} and the
+      font is not slanted, i.e., the slant \verb?\fontdimen1?
+      for the font where the accent is selected
+      is equal to {\tt 0pt}, the accent \verb?\char?{\em 8-bit number}
+      is placed in a \verb?\hbox? which is vertically shifted by the
+      difference of the height of the {\em character} and {\tt 1ex}.
+      The accent box is shifted up, if the {\em character} is
+      heigher than {\tt 1ex}, otherwise it is shifted down.
+      It is also centered horizontally to the {\em character} box.
+\item
+      If the {\em character}  has a height unequal to {\tt 1ex} and the
+      font is slanted, i.e., the value \verb?\fontdimen1?
+      for the font where the accent is selected is not equal to {\tt 0pt},
+      the accent \verb?\char?{\em 8-bit number} is placed in a
+      \verb?\hbox? and vertically shifted as described
+      under 2.
+
+      Horizontally the center of the accent box is
+      displaced from the center of the {\em character} by the
+      absolute amount of the horizontal shift amount multiplied
+      by the font slant \verb?\fontdimen1?
+      (which is given as {\em slant-per-pt}).
+      It is displaced to the right, either if the box is shifted up and
+      the font slant is positive (i.e., the glyphs of the font
+      are slanted to the right), or if the box is shifted down
+      and the font slant is negative, otherwise the accent box is
+      moved to the left.
+
+      Such additional horizontal shift
+      proportional to slant value is an essential component of
+      \TeX{} accenting algorithm since it enables to position the
+      accent properly over the slanted character
+      proportionally to its height.
+
+\end{enumerate}
+
+The proper positioning of the accent box over the accented character
+is performed by the explicit kerns inserted by \TeX. Kerns
+are inserted in such a manner that the horizontal size of
+the accented character is not affected.
+On the contrary, the vertical size of the accented character is
+corrected following the height of the resulting construction.
+
+The fact that the command \verb?\accent? inserts explicit kerns
+prevents \TeX{} from using its automatic hyphenation
+algorithm, as it usually happens for the words with explicitly inserted
+kerns.
+It is essential that the commands for the correct alignment of the accent
+with respect to the accented character are inserted by \TeX{} in the output
+stream at first~--- i.e, {\em before} the main character.
+If the italic correction command  \verb?\/? is placed after
+the accented character and if it is separated from the main character
+by some kerns, \verb?\hbox? command, etc., it fails to define properly
+the {\em italic correction} shift.
+
+\section{How new {\tt\bs{}accent} may be implemented\label{S-acentI}}
+
+By definition the command \verb?\accent? can put accents only over
+the atomic letters and symbols. In particular, it cannot put an
+accent over already accented character (at least in text mode).
+The other disadvantage is that accent and accented character should
+be taken usually from the same font. Although the syntaxis of
+\verb?\accent? enables to use the font switching commands,
+this possibility is realized not in a comfortable mode.
+Usually we would like to select the accent from a special font, and
+the main character~--- from the current font. Inspite of it
+the \verb?\accent? syntaxis forces to store and to reconstruct
+explicitly the current font status when the accent is selected
+not from the current font.
+
+Some simple macro emulating the work of \verb?\accent? and enabling
+to overcome its restrictions are suggested in \cite{SOL}%
+   \footnote{The original commands are modified a little
+             to fit the purposes of this paper.}:
+\begin{verbatim}
+\def\ifnnull#1{\def\inner{#1}\ifx\inner\empty\else}
+\def\genaccent#1#2#3{%
+   \leavevmode\setbox0=\hbox{#3}%
+   \vbox{\offinterlineskip
+         \ifnnull{#1}\hbox to \wd0{\hss#1\hss}\kern 0.2ex\fi
+         \vbox to \ht0{\copy0\vss}%
+         \vtop{\null\vbox to \dp0{\vss}%
+           \ifnnull{#2}\kern 0.2ex \hbox to \wd0{\hss#2\hss}\fi
+         }%
+   }%
+}
+\end{verbatim}
+It enables to put above and below an arbitrary \TeX{} object
+as many accents as you wish (defined as \verb?\hbox? if it is necessary).
+It is also not a problem to select the accents used for this purpose
+from a separate font without taking care about the current font status.
+Unfortunately these commands do not take into account the
+fine accent tuning for slanted fonts, and they also
+break down the work of italic correction \verb?\/?
+(the main character is deeply hidden inside \verb?\vbox?).
+
+This scheme could be modified. Suppose the accent is defined as the first
+parameter of some macro, and the main symbol to be accented -- as its
+second parameter. The following commands
+\begin{itemize}
+\item[]\begin{verbatim}
+\setbox0=\hbox{#2}
+\setbox2=\hbox to \wd0{\hss#1\hss}
+\raise\ht0\box2\kern-\wd0 \unhbox0
+\end{verbatim}
+\end{itemize}
+do the necessary work:\footnote{Here the command {\tt\bs{}unhbox}
+is used instead of {\tt\#2} following the recommendations
+by Bernd Raichle to avoid the side effects if there are
+assignments inside the argument {\tt\#2}.}
+\begin{itemize}
+\item put the accent above the main character,
+\item align it properly in horizontal direction
+      (at least for straight fonts),
+\item does not change the width of the
+      main character while the height of the composite construction
+      is corrected properly,
+\item leaves the main character as the last object in the output stream
+      so that the italic correction command \verb?\/? can have a free
+      access to it,
+\item enables to use arbitrary \TeX{} constructions for accents and
+      accented characters,
+\item conserves the kerning with the characters followed after
+      the accented character (unfortunately the kerning with the
+      {\em previous} character is destroyed irreversibly).
+\end{itemize}
+
+The only thing to do is to add the fine horizontal tuning
+which is not a problem as soon as we can calculate it.
+But the calculation of the horizontal shift necessary
+for slanted fonts {\em is} a problem and requires additional
+tricks! It is necessary to multiply slant value \verb?\fontdimen1?
+by the vertical shift of the accent,
+but the problem is that \TeX{} contains {\em no} primitive
+tools to multiply {\tt 2pt} by {\tt 2pt} and to get
+{\tt 4pt} as a result (at least if the multiplied values
+are the \verb?\dimen? registers).
+
+\begin{figure}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+Case 1: & Case 2: \\
+\hline
+\begin{minipage}{0.45\hsize}
+\begin{verbatim}
+
+\dimenA=...
+\dimenB=...
+\dimenC=\dimenA
+\countX=\dimenB
+\multiply\dimenC by \countX
+\divide\dimenC by 65536
+
+\end{verbatim}
+\end{minipage}
+&
+\begin{minipage}{0.45\hsize}
+\begin{verbatim}
+
+\dimenA=...
+\dimenB=...
+\dimenC=\dimenA
+\countX=\dimenB
+\divide\dimenC by 65536
+\multiply\dimenC by \countX
+
+\end{verbatim}
+\end{minipage}
+\\
+\hline
+\end{tabular}
+\end{center}
+\caption{How to multiply $ 2pt\times2pt\to4pt$ in \TeX\label{S-Fig1}}
+\end{figure}
+
+One way to do such operation is to convert one value to
+an integer (assuming 1{\em pt}=65536) and perform multiplication
+as it is shown on Fig.~\ref{S-Fig1}. Unfortunately the accuracy of such
+algorithm is very low: in the first case the overflow could
+occur after \verb?\multiply\dimenC by \countX? if \verb?\dimenA?
+is too big; in the second case the result after
+\verb?\divide\dimenC? by 65536 could be zero id \verb?\dimenA?
+is too small. Some special macro exist \cite{DRATEX,Calc,FP,Real}
+which perform floating point calculations in \TeX{}
+with high accuracy. Hopefully we do not need such intensive
+calculations. The macro \verb?\slant@value?
+which converts the \verb?\fontdimen1? specified for the current font
+into numerical string (like \verb?\the? command, but without the
+suffix {\tt pt} at its end) would be enough for our purpose:
+\begin{verbatim}
+\setbox0=\hbox{#2}
+\setbox2=\hbox to \wd0{\hss#1\hss}
+\dimen2=\slant@value\ht0
+\kern\dimen2
+   \raise\ht0\box2\kern-\wd0
+\kern-\dimen2 #2
+\end{verbatim}
+The macro which converts the \verb?\fontdimen1? of the current font
+into text string without the suffix {\tt pt} at its end
+can be coded, for example, as
+\begin{verbatim}
+\begingroup\catcode`P=12 \catcode`T=12
+           \lowercase{\endgroup\def\strip@pt#1PT}{#1}}
+\def\slant@value{\expandafter\strip@pt\the\fontdimen1\font}
+\end{verbatim}
+(This trick is suggested by Bernd Raichle and is based
+on {\tt\bs{}kslant} shown on p.375 of \TeX{}book.)
+
+Other operations require a standard \TeX{}nical work
+with boxws and does not cause serious problems
+from the designer. Unfortunately, such operations destroy
+automatic kerning and prevents automatic hyphenations (like ordinary
+command \verb?\accent? does).
+
+\section{General remarks about accent commands\label{S-general}}
+
+To create the ``universal'' set of accenting commants it is necessary
+to take into account the following factors:
+\begin{enumerate}
+\item
+Symbol used as accent could be (and should be)
+an ordinary \verb?\hbox?~--- i.e., the User does not align it in
+advance with respect to the height of \textsf{1ex} as it is done
+for accent characters in CM fonts.
+\item
+Since typical accents in CM fonts
+are shifted in advance verically by \textsf{1ex} and horizontally by
+corresponding slant correction, before we use these characters
+as accents we should compensate these shifts backward. Hence,
+the User should have at his/her disposal necessary macro.
+\item
+Although typically accents are placed above the characters,
+there are cases where the modifiers are placed below the character,
+at the baseline of the character and over the character to make
+special composite objects. Hence, a variety of accenting commands
+is necessary.
+\item
+Accents which are placed above the character or below the character
+may have additional vertical space between the accent and the character
+for fine tuning.
+\item
+Accents which are the modifiers joined without
+space with the character may require to shift it closer to
+the character to make intersection well expressed.
+\item
+Symbol like comma may require to raise it above the baseline
+before it can be used as the upper accent.
+\item
+Accents can be placed before the letter at the beginning
+of the word, after the letter at the end of the word,
+or between two letters in the middle of the word,
+as in it explained in section \ref{S-Intro}.
+\item
+Accents ``{\em overline}'' ({\em macron})
+and ``{\em underline}'' may be longer than the width
+of one letter\footnote{The Saam (Lappish) writing system is the only
+           known up to now which has such modificators.}.
+\item
+Accents may be justified with respect to the character
+in non-standard way~--- say, it can be aligned to the left corner
+or to the right corner of the character.
+\item
+Pseudo accents like strokes, ets., artificially added to already existing
+characters, may require fine tuning of their position with respect
+to the body of the character. In particular, such tuning
+can depend on font style (italic, slanted, etc.).
+\item
+It is necessary to take into account that the composite characters may
+be influenced by the commands \verb?\uppercase? and \verb?\lowercase?
+(or by equivalent \LaTeXe{} commands \verb?\MakeUppercase?
+and \verb?\MakeLowercase?). Accents should be stable (since these
+operations change the height and the width of the character) and
+robust (since accented characters may be placed inside section
+headers, etc., where~--- at least for \LaTeXe{}~--- fragile commands
+are not welcome).
+\item
+Closely related to it is the problem with the accents for I/i and
+J/j: when converted by \verb?\uppercase? and \verb?\lowercase?
+these letters can get or loose the upper dot accent.
+\end{enumerate}
+
+\section{Some examples\label{S-example}}
+
+Before we proceed further let me demonstrate some simple examples.
+(Although the commands included into \textsc{accentbx} are rather lengthy,
+it is done intensionally: these commands are mainly designed for creating
+your own accent commands and specific characters available through macros,
+not for ``everyday usage'' inside your text.)
+
+Suppose we would like to put a tiny letter `a' as the accent over
+some character. Using the package \textsc{accentbx}
+we create special command
+\begin{itemize}
+\item[]\verb?\def\tA#1{\upaccent{\tiny a}{#1}}?
+\end{itemize}
+(\verb?\upaccent? places one box as the accent over the second box).
+Now we can see how it works:
+\begin{center}
+\begin{tabular}{c@{ = }lc@{ = }l}
+ \tA{X} & {\tt\bs{}tA\{X\}}
+&
+ \tA X & {\tt\bs{}tA X}
+\\
+ \tA{x} & {\tt\bs{}tA\{x\}}
+&
+\lowercase{\tA X} & {\tt\bs{}lowercase\{\bs{}tA X\}}
+\\
+{\bf \tA{X}} & {\tt\bs{}bf\bs{}tA\{X\}}
+&
+{\it \tA{X}} & {\tt\bs{}it\bs{}tA\{X\}}
+\\
+\tA{\tA X} & {\tt\bs{}tA\{\bs{}tA X\}}
+&
+\tA{\tA{\tA X}} & {\tt\bs{}tA\{\bs{}tA\{\bs{}tA X\}\}}
+\\
+{\it\tA{\tA X}} & {\tt\bs{}it\bs{}tA\{\bs{}tA X\}}
+&
+{\it\tA{\tA{\tA X}}} & {\tt\bs{}it\bs{}tA\{\bs{}tA\{\bs{}tA X\}\}}
+\\
+\end{tabular}
+\end{center}
+
+If you would like to reproduce exactly what is typed above,
+you'll discover that the result is a little bit different:
+\verb?\it\tA{\tA{X}}? gives {\it\TA{\TA{X}}}, not {\it\tA{\tA{X}}}.
+Yes, actually the previous example was defined as
+\begin{itemize}
+\item[]\verb?\def\tA#1{\upaccent{\aboxsplit{\tiny a}}{#1}}?
+\end{itemize}
+--- since \verb?\upaccent? just places a box over box, it is necessary
+to add some space around tiny `a' to separate these boxes, and this is
+just what macro \verb?\aboxsplit? does.
+
+If you try to make ordinary \TeX{} accents with
+\verb?\upaccent?, you'll discover another essential feature:
+\begin{itemize}
+\item[]
+\verb?\upaccent{\char"13}{X}?=\upaccent{\char"13}{X}
+\end{itemize}
+while you would like to have {\accent"13 X}
+--- the space is too big because the character \verb?\char"13?
+in \textsl{Computer Modern} typeface is shifted in advance
+to fit the letter `x' without further adjustments.
+To correct this artificial shift typical for
+\TeX{} accents special macro \verb?\aboxshift? should be used:
+\begin{itemize}
+\item[]
+\verb?\upaccent{\aboxshift{\char"13}}{X}?=\upaccent{\aboxshift{\char"13}}{X}.
+\end{itemize}
+This macro subtracts the height \textsf{1ex} in vertical direction
+and corresponding slant correction in horizontal direction.
+
+Similar effect is when you try to put \textit{comma} as the accent without
+preliminary adjustment:
+\begin{itemize}
+\item[]
+\verb?\def\tcomma#1{\upaccent{,}{#1}}?\\
+\verb?\tcomma{X}?=\Tcomma{X}
+\end{itemize}
+Since \verb?\upaccent? alignes the boxes with respect to the baseline
+and comma has non-zero depth, its descender overlaps with the
+character to be accented. To correct it we should use this macro:
+\begin{itemize}
+\item[]
+\verb?\def\tcomma#1{\upaccent{\aboxsplit{\aboxbase{,}}}{#1}}?\\
+\verb?\tcomma{X}?=\tcomma{X}
+\end{itemize}
+Macro \verb?\aboxbase? raises the character by its depth so that
+the baseline of the result corresponds to its geometrical bottom, and
+macro \verb?\aboxsplit? adds some extra space above and below it.
+
+Finally, let us show how the interletter accents
+shown in section~\ref{S-Intro} can be created:
+\begin{itemize}
+\item[]
+\verb?\def\burg{b\upaccent{\aboxshift{\char"15}}{\markchar}g}?
+\\
+\verb?St.~Peters\burg?=St.~Peters\burg
+\end{itemize}
+Here macro \verb?\markchar? creates invisible rule with zero width and
+the height corresponding to that of letter `x'. Since \verb?\upaccent?
+adjusts the height and the depth of the accented character but not its
+width, the result is the object with zero width (from \TeX' point of view)
+placed between characters \textit{b} and \textit{g}.
+
+If we would like
+to make our macro case-sensitive, it can be defined as
+\begin{itemize}
+\item[]
+\verb?\def\burg{b\upaccent{\Aboxshift{\char"15}}{\markchar}g}?
+\\
+\verb?\def\BURG{B\upaccent{\Aboxshift{\char"15}}{\MARKCHAR}G}?
+\end{itemize}
+This results to:
+\begin{itemize}
+\item[]
+\verb?St.~Peters\burg?=St.~Peters\burg
+\\
+\verb?ST.~PETERS\BURG?=ST.~PETERS\BURG
+\\
+\verb?\MakeUppercase{st.~peters\burg}?=\MakeUppercase{st.~peters\burg}
+\\
+\verb?\MakeLowercase{ST.~PETERS\BURG}?=\MakeLowercase{ST.~PETERS\BURG}
+\end{itemize}
+(Here macro \verb?\MARKCHAR? creates the invisible rule
+with the height of capital letter `X',
+macro \verb?\markchar? and \verb?\MARKCHAR?
+operate in such a way that they are transformed into each other
+after uppercasing and lowercasing,
+macro \verb?\Aboxshift? is the robust version of \verb?\aboxshift?
+which is not destroyed by the \LaTeXe{} macro
+\verb?\MakeUppercase? and \verb?\MakeLowercase?.)
+
+\section{Commands for accents\label{S-commands}}
+
+\paragraph{Important note.}
+In most cases the symbol used as the accent or modifier
+should be adjusted in advance~--- see examples in
+the previous section and section~\ref{S-commandsI}
+for more details.
+
+\bigskip
+
+\noindent
+The style file {\sc accentbx}
+contains the following commands used to make accents:
+\begin{description}
+\item[] \verb?\upaccent{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?~---
+   put {\em accent} above {\em main-symbol}
+\item[] \verb?\dnaccent{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?~---
+   put {\em accent} below {\em main-symbol}
+\item[] \verb?\baseaccent{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?~---
+   put {\em accent} at the baseline below symbol {\em main-symbol}
+\item[] \verb?\nullaccent{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?~---
+   the {\em accent} (i.e., some character modifier like stroke, etc.,
+   attached to the main character)
+   is centered with respect to the height of the
+   {\em main-symbol}
+\item[] \verb?\upaccentC{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?~---
+   synonim for \verb?\upaccent?.
+\item[] \verb?\upaccentL{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?~---
+   put {\em accent} above {\em main-symbol} like
+   the command \verb?\upaccent? does,
+   but aligns it over the left corner of the character.
+\item[] \verb?\upaccentR{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?~---
+   put {\em accent} above {\em main-symbol} like
+   the command \verb?\upaccent? does,
+   but aligns it over the right corner of the character.
+\item[] \verb?\dnaccentC{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?,
+        \verb?\dnaccentL{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?,\\
+        \verb?\dnaccentR{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?~---
+   corresponding modifications of the command \verb?\dnaccent?.
+\item[] \verb?\baseaccentC{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?,
+        \verb?\baseaccentL{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?,\\
+        \verb?\baseaccentR{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?~---
+   corresponding modifications of the command  \verb?\baseaccent?.
+\item[] \verb?\nullaccentC{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?,
+        \verb?\nullaccentL{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?,\\
+        \verb?\nullaccentR{?{\em accent}\verb?}{?{\em main-symbol}\verb?}?~---
+   corresponding modifications of the command  \verb?\nullaccent?.
+\item[] \verb?\upaccentbar[?{\em height}\verb?]{?{\em main-symbol}\verb?}?~---
+   place the horizontal bar above the {\em character}
+   taking into account its width (i.e., it can place the bar over
+   more than one character). Optional parameter {\em height}
+   specifies additional space which is placed around the bar.
+   Default value of additional space is~\textsf{0.2ex}.
+\item[] \verb?\dnaccentbar[?{\em height}\verb?]{?{\em main-symbol}\verb?}?~---
+   put the horizontal bar below the {\em character}
+   taking into account its width (i.e., it can place the bar under
+   more than one character). Optional parameter {\em height}
+   specifies additional space which is placed around the bar.
+   Default value of additional space is~\textsf{0.2ex}.
+\end{description}
+You can use a variety of \TeX{} constructions as the {\em accent}
+and {\em main-symbol}~--- mainly those that can be used inside
+\verb?\hbox?. In particular, the accented letter can be used as the main
+symbol (i.e., the multiple commands
+\verb?\upaccent?, \verb?\dnaccent?, \verb?\baseaccent?, etc.,
+could be used).
+It is essential to note that if the final symbol in a chain
+of accenting commands is the symbol with \verb?\catcode?
+11 or 12, the italic correction command \verb?\/? will work
+correctly if it follows the whole construction.
+
+\section{Commands which create and correct accent
+         characters\label{S-commandsI}}
+
+The special objects useful if they are used
+as the {\em accents} can be created using the following
+commands:
+\begin{description}
+\item[] \verb?\aboxshift[?{\em height}\verb?]{?{\em character}\verb?}?~---
+   lower by {\em height} the character
+   (which is usually the accent from Computer Modern font family).
+   Default value for {\em height} is  \textsf{1ex}.
+   Except the height the additional horizontal shift
+   typical to slanted fonts is subtracted as well.
+\item[] \verb?\aboxbase[?{\em height}\verb?]{?{\em character}\verb?}?~---
+   raise the character by the specified {\em height} and, if
+   there is still some depth of the result, by the residue depth.
+   Default value for {\em height} is  \textsf{0pt}
+   which means that the character is just raised if some its
+   elements are below the baseline.
+\item[] \verb?\aboxbaseline{?{\em character}\verb?}?~---
+   raise or lower the character so that its bottom becomes
+   the baseline (i.e., if the depth of the character is positive,
+   the character is raised, if the depth is negative~---
+   the character is lowered).
+\item[] \verb?\aboxsplit[?{\em height}\verb?]{?{\em character}\verb?}?~---
+   insert above and below the {\em character} the
+   white space with the specified {\em height}. Default value
+   for the {\em height} is \textsf{0.2ex}.
+\item[] \verb?\aboxjoin[?{\em height}\verb?]{?{\em character}\verb?}?~---
+   subtract above the {\em character} and below it the
+   specified {\em height}.  Default value
+   for the {\em height} is \textsf{0.1ex}.
+\item[] \verb?\aboxsplitup[?{\em height}\verb?]{?{\em character}\verb?}?~---
+   insert below the {\em character} the
+   white space with the specified {\em height} (it adds white space
+   \textit{below} the accent because the accent created by \verb?\upaccent?
+   is supposed to be \textit{above} the character). Default value
+   for the {\em height} is \textsf{0.2ex}.
+\item[] \verb?\aboxsplitdn[?{\em height}\verb?]{?{\em character}\verb?}?~---
+   insert above the {\em character} the
+   white space with the specified {\em height} (it adds white space
+   \textit{above} the accent because the accent created by \verb?\dnaccent?
+   is supposed to be \textit{below} the character). Default value
+   for the {\em height} is \textsf{0.2ex}.
+\item[] \verb?\aboxsplitup[?{\em height}\verb?]{?{\em character}\verb?}?~---
+   subtract below the {\em character} the
+   white space with the specified {\em height} (it subtracts white space
+   \textit{below} the accent because the accent created by \verb?\upaccent?
+   is supposed to be \textit{above} the character). Default value
+   for the {\em height} is \textsf{0.1ex}.
+\item[] \verb?\aboxsplitdn[?{\em height}\verb?]{?{\em character}\verb?}?~---
+   subtract above the {\em character} the
+   white space with the specified {\em height} (it subtracts white space
+   \textit{above} the accent because the accent created by \verb?\dnaccent?
+   is supposed to be \textit{below} the character). Default value
+   for the {\em height} is \textsf{0.1ex}.
+\item[] \verb?\markchar?~--- make the invisible rule with
+    the height equal to {\tt 1ex}. After \verb?\uppercase?
+    and \verb?\MakeUppercase? it is converted into \verb?\MARKCHAR?.
+\item[] \verb?\MARKCHAR?~--- make the invisible rule with
+    the height equal to the height of the capital letter \textit{X}.
+    After \verb?\lowercase?
+    and \verb?\MakeLowercase? it is converted into \verb?\markchar?.
+\item[] \verb?\marktwochar{?{\em char$_1$}\verb?}{?{\em char$_2$}\verb?}?~---
+    make the invisible rule with zero width, with
+    height equal to the maximal height of two characters
+    and with corresponding depth. Can be substituted by
+    \verb?\aboxmarker? but is conserved for compatibility reasons.
+\item[] \verb?\aboxmarker{?{\em character}\verb?}?~---
+    make the invisible rule with zero width,
+    with height equal to the height of the box
+    and with corresponding depth.
+\item[] \verb?\aboxnull{?{\em character}\verb?}?~---
+   makes an artificial box with zero height and zero
+   depth but with the same the contents as
+   the source. The width and the baseline are conserved as well.
+\item[] \verb?\akern{?{\em char$_1$}\verb?}{?{\em char$_2$}\verb?}?~---
+    make the kern corresponding to the pair of characters.
+    It is useful if you would like to reconstruct kerning
+    destroyed by accents. Example:
+    \begin{itemize}
+    \item[]
+    \begin{tabular}{lcr}
+    {\tt\bs{}upaccent\{.\}\{A\}\bs{}upaccent\{.\}\{W\}} &=&
+    \upaccent{\aboxsplit.}{A}\upaccent{\aboxsplit.}{W}
+    \\
+    {\tt\bs{}upaccent\{.\}\{A\}\bs{}akern AW\bs{}upaccent\{.\}\{W\}} &=&
+    \upaccent{\aboxsplit.}{A}\akern AW\upaccent{\aboxsplit.}{W}
+    \end{tabular}
+    \end{itemize}
+\item[] \verb?\aboxbar{?{\em character}\verb?}?~---
+   create the horizontal bar which is as wide as necessary
+   to overline or to underline the {\em character}.
+   The commands \verb?\upaccentbar? and \verb?\dnaccentbar?
+   described in the previous section are defined with its help as:
+{\begin{verbatim}
+\def\upaccentbar#1{\upaccent{\aboxsplit{\aboxbar{#1}}}{#1}}
+\def\dnaccentbar#1{\dnaccent{\aboxsplit{\aboxbar{#1}}}{#1}}
+\end{verbatim}}
+   The width of the bar is scaled with respect to the nominal
+   width of the character by factor \verb?\accentwidthfactor?
+   (default value 0.9). The thickness of the bar is the height
+   of the dot selected from currect font and scaled
+   twice by factor \verb?\accentthickness? (default value is 0.1)~--- so
+   by default the bar thickness is in 5 times less than
+   the thickness of the dot (i.e., the character~`.' of the current font).
+\item[] \verb?\aboxrule{?{\em width}\verb?}?~--- just the same as
+   \verb?\aboxbar? but the width of the object to be covered by the bar
+   is specified explicitly and the width is not scaled by
+   \verb?\accentwidthfactor?.
+
+\end{description}
+
+\section{General accent {\tt\bs{}makeaccent}
+        and general frame {\tt\bs{}aboxframed},{\tt\bs{}aboxtuning}%
+        \label{S-genmacro}}
+
+Macro listed above are enough for 99\% of applications. But for
+extremely exotic accent constructions and for cases which require
+fine tuning of the accent and the main character
+\textsc{accentbx} contains three additional commands:
+\begin{itemize}
+\item \verb?\makeaccent?~--- for fine tuning of the accent
+      and the main character (both could be some \verb?\hbox?
+      constructions!) with respect to each other,
+\item \verb?\aboxframed?~--- for fine tuning of the frame and the baseline
+      of the character used as the accent,
+\item \verb?aboxtuning?~--- for explicit specification
+      of frame and baseline of the box.
+\end{itemize}
+
+\subsection{Macro {\tt\bs{}aboxframed} and {\tt\bs{}aboxtuning}}
+
+Macro \verb?\aboxframed? enables to control white spaces
+around the character used as the accent and the position
+of its baseline. It has the syntaxis:
+\begin{itemize}
+\item[]\verb?\aboxframed[?{\em options}\verb?]{?{\em object}\verb?}?
+\end{itemize}
+where {\em object} is the \verb?\hbox?-object to be adjusted,
+and {\em options} is the list of letters describing the operations:
+\begin{itemize}
+\item[\texttt{r}]~--- increase right boundary by one step,
+\item[\texttt{u}]~--- increase upper boundary by one step,
+\item[\texttt{l}]~--- increase left boundary by one step,
+\item[\texttt{d}]~--- increase lower boundary by one step,
+\item[\texttt{b}]~--- increase baseline position by one step,
+\item[\texttt{R}]~--- decrease right boundary by one step,
+\item[\texttt{U}]~--- decrease upper boundary by one step,
+\item[\texttt{L}]~--- decrease left boundary by one step,
+\item[\texttt{D}]~--- decrease lower boundary by one step,
+\item[\texttt{B}]~--- decrease baseline position by one step.
+\end{itemize}
+You can use as much lettwers as you wish, and each letter
+performs an independent increment or decrememt of corresponding value.
+The step values are defined by macro:
+\begin{description}
+\item[]\verb?\aboxframestepV?~--- step in vertical direction
+       (i.e., for upper and lowerr boundaries and for baseline position),
+       default value is~\textsf{0.2ex},
+\item[]\verb?\aboxframestepH?~--- step in horizontal direction
+       (i.e., for right and left boundaries),
+       default value is~\textsf{0.08em}.
+\end{description}
+The algorithm behaves like following:
+\begin{enumerate}
+\item All five increments (right boundary, upper boundary,
+      left boundary, lower boundary and baseline position)
+      are collected and stored in corresponding variables.
+\item The height and the depth of the object are corrected
+      by corresponding values without any changes inside the object.
+\item Left and right spaces (may be, negative) are added
+      to the object.
+\item The object is shifted (raised) by the value corresponding
+      to the shift of the specified shift of the baseline.
+\end{enumerate}
+
+To make life easier, there is the macro \verb?\aboxtuning?
+which performs just the same operation in one step. Its syntaxis is:
+\begin{itemize}
+\item[]\verb?\aboxtuning{?{\tt $\Delta r$,$\Delta h$,$\Delta l$,$\Delta d$,$\Delta b$}\verb?}{?{\em object}\verb?}?
+\end{itemize}
+where $\Delta r$ shows the shift of the right boundary,
+$\Delta h$~--- the shift of the upper boundary,
+$\Delta l$~--- the shift of the left boundary,
+$\Delta d$~--- the shift of the lower boundary,
+$\Delta b$~--- the shift of the baseline. Some values can be omitted
+(in this case they are assumed to be zero), trailing commas
+can be omitted also if there are no more values in a list.
+
+\subsection{Macro {\tt\bs{}makeaccent}}
+
+Macro \verb?\makeaccent? enables to control mutial alignment
+of the accent and the main character in more details.
+It has the syntaxis:
+\begin{itemize}
+\item[]\verb?\makeaccent[?{\em options}\verb?]<?{\em shifts}%
+       \verb?>{?{\em accent-character}\verb?}{?{\em main-character}\verb?}?
+\end{itemize}
+where
+\begin{itemize}
+\item
+{\em accent-character} is the \textsf{hbox}-object used as the accent,
+\item
+{\em main-character} is the \textsf{hbox}-object to be accented,
+\item
+{\em options} is the list of letters describing roughly
+what base points of the accent and
+the main character are joined when these two object are overlapped,
+\item
+{\em shifts} is the list of four numeric values which control fine tuning
+of the base points of the accent and
+the main character.
+\end{itemize}
+
+Macro \verb?\makeaccent? overlaps the {\em main character}
+and the {\em accent character} so that their base points coinside
+with each other. When the accent character is lowered or raised, the
+corresponding slant correction is added to is horizontal shift.
+By default the accent and
+the main character are aligned so that the accent
+is centered above the main character and its baseline is placed on top
+of the main character (see below the defasult value
+for the parameter {\em options}).
+Parameters {\em options} and {\em shifts} are optional~---
+they may be omitted together with surrounding angular and square
+braces.
+
+Following letters can be used in {\em options}
+to specify the base points of
+the {\em accent-character} and the {\em main-character}
+which should be overlapped by \TeX{} when composing the accented
+character:
+\begin{itemize}
+\item[\texttt{r}]~--- right side of the main character,
+\item[\texttt{l}]~--- left side of the main character,
+\item[\texttt{o}]~--- center between left and right boundaries
+                      of the main character,
+\item[\texttt{t}]~--- top of the main character,
+\item[\texttt{d}]~--- bottom of the main character (including its depth),
+\item[\texttt{b}]~--- baseline of the main character,
+\item[\texttt{c}]~--- vertical center of the main character
+                      (the middle between its top and bottom
+                      boundaties including its depth),
+\item[\texttt{s}]~--- $1/2$ of the height of the main character,
+\item[\texttt{z}]~--- $1/2$ of the depth of the main character.
+\item[\texttt{R}]~--- right side of the accent,
+\item[\texttt{L}]~--- left side of the accent,
+\item[\texttt{O}]~--- center between left and right boundaries
+                      of the accent,
+\item[\texttt{T}]~--- top of the accent,
+\item[\texttt{D}]~--- bottom of the accent (including its depth),
+\item[\texttt{B}]~--- baseline of the accent,
+\item[\texttt{C}]~--- vertical center of the accent,
+\item[\texttt{S}]~--- $1/2$ of the height of the accent,
+\item[\texttt{Z}]~--- $1/2$ of the depth of the accent.
+\end{itemize}
+For example, the combination {\tt rt} means that the right top
+point of the main character is selected as the base point,
+and the combination {\tt OD} means that the center of the lower
+boundary of the accent is selected as its base point.
+By default {\em options}={\tt [tBoO]}
+which means that the accent and
+the main character are aligned horizontally so that their
+vertical middle lines coinside, and that the top of the main character
+and the baseline of the accent counside as well.
+
+In addition to rough specification of the base points of the main character
+and the accent character by {\em options}, the User may perform fine
+tuning of their positions using {\em shifts}. Namely,
+this parameter is the list of four values (lengths) separated by commas
+which are added to the coordinates of the base points specified by
+{\em options}. First value corresponds to $x$-shift of the base point
+of the main character, second value~--- to $y$-shift of the base point
+of the main character, third value~--- to $x$-shift of the base point
+of the accent character, forth value~--- to $y$-shift of the base point
+of the accent character. If some values are equal to zero,
+they can be omitted. If there are no more non-zero values in a list,
+trailing commas can be omitted as well. By default parameter
+{\em shift} consistes of four zero values.
+
+To illustrate the power of macro \verb?\makeaccent? let us see how the
+accent macro described in section~\ref{S-commands} can be
+specified:
+\begin{center}
+\small
+\begin{verbatim}
+\def\upaccentC#1#2{\makeaccent[BtOo]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\upaccentR#1#2{\makeaccent[BtRr]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\upaccentL#1#2{\makeaccent[BtLl]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\dnaccentC#1#2{\makeaccent[TdOo]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\dnaccentR#1#2{\makeaccent[TdRr]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\dnaccentL#1#2{\makeaccent[TdLl]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\baseaccentC#1#2{\makeaccent[TbOo]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\baseaccentR#1#2{\makeaccent[TbRr]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\baseaccentL#1#2{\makeaccent[TbLl]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\nullaccentC#1#2{\makeaccent[SsOo]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\nullaccentR#1#2{\makeaccent[SsRr]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\nullaccentL#1#2{\makeaccent[SsLl]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\end{verbatim}
+\end{center}
+
+
+\section{Robust versions of some commands\label{S-robust}}
+
+Since \LaTeXe{} macro \verb?\@ifnextchar? is fragile and is
+destroyed by some \LaTeXe{} commands (for example,
+by \verb?\MakeUppercase? and \verb?\MakeLowercase?),
+commands with optional arguments
+have similar robust versions which do not have options but which
+are not destroyed inside \LaTeXe{} stomach.
+The list of fragile commands is the following:
+\begin{itemize}
+\item \verb?\aboxshift[?{\em height}\verb?]{?{\em character}\verb?}?:
+        \begin{itemize}
+        \item
+        \verb?\Aboxshift{?{\em character}\verb?}?
+        assumes that {\em height}=\textsf{1ex},
+        \item
+        \verb?\AboxShift{?{\em height}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\item \verb?\aboxbase[?{\em height}\verb?]{?{\em character}\verb?}?:
+        \begin{itemize}
+        \item
+        \verb?\Aboxbase{?{\em character}\verb?}?
+        assumes that {\em height}=\textsf{0pt},
+        \item
+        \verb?\AboxBase{?{\em height}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\item \verb?\aboxsplit[?{\em height}\verb?]{?{\em character}\verb?}?:
+        \begin{itemize}
+        \item
+        \verb?\Aboxsplit{?{\em character}\verb?}?
+        assumes that {\em height}=\textsf{0.2ex},
+        \item
+        \verb?\AboxSplit{?{\em height}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\item \verb?\aboxsplitup[?{\em height}\verb?]{?{\em character}\verb?}?:
+        \begin{itemize}
+        \item
+        \verb?\Aboxsplitup{?{\em character}\verb?}?
+        assumes that {\em height}=\textsf{0.2ex},
+        \item
+        \verb?\AboxSplitup{?{\em height}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\item \verb?\aboxsplitdn[?{\em height}\verb?]{?{\em character}\verb?}?:
+        \begin{itemize}
+        \item
+        \verb?\Aboxsplitdn{?{\em character}\verb?}?
+        assumes that {\em height}=\textsf{0.2ex},
+        \item
+        \verb?\AboxSplitdn{?{\em height}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\item \verb?\aboxjoin[?{\em height}\verb?]{?{\em character}\verb?}?:
+        \begin{itemize}
+        \item
+        \verb?\Aboxjoin{?{\em character}\verb?}?
+        assumes that {\em height}=\textsf{0.1ex},
+        \item
+        \verb?\AboxJoin{?{\em height}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\item \verb?\aboxjoinup[?{\em height}\verb?]{?{\em character}\verb?}?:
+        \begin{itemize}
+        \item
+        \verb?\Aboxjoinup{?{\em character}\verb?}?
+        assumes that {\em height}=\textsf{0.1ex},
+        \item
+        \verb?\AboxJoinup{?{\em height}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\item \verb?\aboxjoindn[?{\em height}\verb?]{?{\em character}\verb?}?:
+        \begin{itemize}
+        \item
+        \verb?\Aboxjoindn{?{\em character}\verb?}?
+        assumes that {\em height}=\textsf{0.1ex},
+        \item
+        \verb?\AboxJoindn{?{\em height}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\item \verb?\upaccentbar[?{\em height}\verb?]{?{\em character}\verb?}?:
+        \begin{itemize}
+        \item
+        \verb?\Upaccentbar{?{\em character}\verb?}?
+        assumes that {\em height}=\textsf{0.2ex},
+        \item
+        \verb?\UpaccentBar{?{\em height}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\item \verb?\dnaccentbar[?{\em height}\verb?]{?{\em character}\verb?}?:
+        \begin{itemize}
+        \item
+        \verb?\Dnaccentbar{?{\em character}\verb?}?
+        assumes that {\em height}=\textsf{0.2ex},
+        \item
+        \verb?\DnaccentBar{?{\em height}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\item \verb?\aboxframed[?{\em options}\verb?]{?{\em character}\verb?}?:
+        \begin{itemize}
+        \item
+        \verb?\Aboxframed{?{\em character}\verb?}?
+        assumes that {\em options}=\textsf{ud},
+        \item
+        \verb?\AboxFramed{?{\em options}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\item \verb?\makeaccent[?{\em options}\verb?]<?%
+             {\em shifts}\verb?>{?%
+             {\em accent}\verb?}{?{\em character}\verb?}?~:
+        \begin{itemize}
+        \item
+        \verb?\Makeaccent{?%
+             {\em accent}\verb?}{?{\em character}\verb?}?
+        assumes that the parameters
+        {\em options} and {\em shifts} are empty,
+        \item
+        \verb?\MakeAccent{?{\em options}\verb?}{?%
+             {\em shifts}\verb?}{?%
+             {\em accent}\verb?}{?{\em character}\verb?}?
+        is robust.
+        \end{itemize}
+\end{itemize}
+
+\section{Case-sensitive accents for {\sl I}
+         and {\sl J}\label{S-IJ}}
+
+The letters {\sl I} and {\sl J} should be separated in a
+specific class among all the letters used with accents.
+The essential difference is that the lowercase form contains the
+{\em dot} accent while the uppercase form does not have such modifiers.
+To make correct accented versions of lowercase {\sl i} and {\sl j}
+\TeX{} contains special characters {\sl dotless-i} and
+{\sl dottless-j}, usually defined by the commands \verb?\i? and \verb?\j?.
+As a result the correctly working command {\tt\bs{}accent} should
+analyze the uppercase and lowercase forms of these letters and select
+proper glyph to produce correct forms of letters even after
+{\tt\bs{}uppercase} and {\tt\bs{}lowercase}.
+
+As soon as we consider the cyrillic writing systems, the capital
+{\sl Ukranian I} ({\sl \"I}) should be produced by \verb?\"I?,
+while the lowercase {\sl ukranian i} ({\sl \"\i}) uses the command
+\verb?\"\i?. Contrary to that example, the Khakassian letter
+{\sl dotted-I}, which has a dot in uppercase form as well as
+in lowercase one, requires \verb?\.I? to produce the uppercase variant
+{\sl \.I}, and an ordinary \verb?i? to produce the lowercase
+variant {\sl i}.
+Since it is assumed that {\it Mr.\space User} or {\it Mrs.\space User}
+can distinguish what letter does he/she want and to separate uppercase
+and lowercaee variants explicitly, it seems that the existance
+of two various types for specification of lowercase and uppercase
+forms does not produce any troubles. Unfortunately it is so before
+the commands \verb?\uppercase? and \verb?\lowercase? starts their work:
+\begin{center}
+\begin{tabular}{c@{ = }cc@{ = }cc@{ = }c}
+ \.I & {\tt\bs{}.I}
+&
+{\tt\bs{}uppercase\{\bs{}.I\}} & \uppercase{\.I}
+&
+{\tt\bs{}lowercase\{\bs{}.I\}} & \lowercase{\.I}
+\\
+ i & {\tt i}
+&
+{\tt\bs{}uppercase\{i\}} & \uppercase{i}
+&
+{\tt\bs{}lowercase\{i\}} & \lowercase{i}
+\\
+ \"I & {\tt\bs{}"I}
+&
+{\tt\bs{}uppercase\{\bs{}"I\}} & \uppercase{\"I}
+&
+{\tt\bs{}lowercase\{\bs{}"I\}} & \lowercase{\"I}
+\\
+\"\i & {\tt\bs{}"\bs{}i}
+&
+{\tt\bs{}uppercase\{\bs{}"\bs{}i\}} & \uppercase{\"\i}
+&
+{\tt\bs{}lowercase\{\bs{}"\bs{}i\}} & \lowercase{\"\i}
+\end{tabular}
+\end{center}
+
+Although in principle {\tt\bs{}uppercase} and {\tt\bs{}lowercase}
+can be encountered at any place, in practice only the {\tt\bs{}uppercase}
+and only in \LaTeX{} headers is used outside explicit User's control
+(although, for example, to create the headers using {\sc small capitals}
+font one could insert in some style the macro containing
+the construction like {\tt\bs{}lowercase\{\bs{}sc ....\}}).
+Roughly the \LaTeX{} mechanism for automatically
+created headers works as follows:
+\begin{enumerate}
+\item The header text {\em some-header-text} containing the text
+      and \TeX{} commands is created elsewhere.
+\item The object {\em some-header-text} is expanded into non-expandable
+      tokens.
+\item The uppercase transformation over the list of
+      non-expandable tokens is performed.
+      The latter means that the characters
+      are substituted by their {\tt\bs{}uccode} values while the \TeX{}
+      primitive commands remain unchangable.
+\item The result is substituted into the header of the page and
+      the list of tokens is processed by \TeX{} as usually.
+\end{enumerate}
+(The detailed investigation of \LaTeX{} source code shows that it
+is not actually true, but the result of `true' macro is close
+to this description.)
+
+The behaviour of \verb?\uppercase? and \verb?\lowerrcase? is different in
+such formats as {\sl Plain}, \AmS\/\TeX{} and \LaTeX{} 2.09,
+and \LaTeXe. The transformation of the characters in old formats
+uses only the values \verb?\uccode? and \verb?\lccode?, while
+\LaTeXe{} uses additional list \verb?\@uclclist? of characters
+which use their own rule different from \verb?\lccode?--\verb?\uccode?.
+In particular, for old formats and \LaTeX$2_{\varepsilon}$ in
+OT1 with encoding the symbols \verb?\i? and \verb?\j? are not
+affected by the commands \verb?\uppercase?
+and \verb?\lowercase?, which means that the page header
+ctreated automatically by \verb?\uppercase? will be wrong.
+
+In this respect the behaviour of \LaTeXe{}
+in T1 encoding is quite different.
+The letter {\sl dotless-i} remains constant after
+\verb?\lowercase?, and is transformed into capital {\sl I}
+after \verb?\uppercase?. The letter {\sl I} after
+\verb?\uppercase? remais the same, but \verb?\lowercase?
+transforms it into ordinary {\sl i}.
+Finally, the letter {\sl i} is transformed into {\sl I}
+after \verb?\uppercase?, and conserves its form after
+\verb?\lowercase?. Similar transformations happen with
+$\hbox{\sl \j} \longleftrightarrow \hbox{\sl J}
+\longleftrightarrow\hbox{\sl j}$.
+This property enables to create headers and footers
+properly as soon as only one \verb?\uppercase? is used for it,
+but creates funny errors when the User tries to apply
+\verb?\uppercase?--\verb?\lowercase? by himself%
+   \footnote{The problem becomes even more complex taking into account
+             that there is also the letter {\sl \.I} in encoding T1.
+             It is transferred to ordinary {\sl i} by {\tt\bs{}lowercase},
+             and into {\sl I} after subsequent {\tt\bs{}uppercase}.}.
+The optional variant where the stress is put above some of these
+letters makes the life even more unhappy.
+
+The following macro enables to analyze
+if the text is transformed by some \verb?\uppercase? or
+\verb?\lowercase? commands and put correct form of the letters.
+The commands \verb?\i? and \verb?\I? create the letters
+{\sl \i}/{\sl I}, which are correctly processed by
+\verb?\uppercase?--\verb?\lowercase?,
+commands \verb?\ii? and \verb?\II? create the letters
+{\sl i}/{\sl \.I} with corresponding properties:
+\begin{itemize}\item[]\begin{verbatim}
+\edef\temp{\the\i} \chardef\idotless=\temp\relax
+\def\i{\ifnum`i=`\i \idotless \else I\fi}
+\def\I{\ifnum`I=`\I I\else \idotless \fi}
+\def\ii{\ifnum`i=`\i i\else \.I\fi}
+\def\II{\ifnum`I=`\I \.I\else i\fi}
+\end{verbatim}\end{itemize}
+Finally, the ordinary letters \verb?i? and \verb?I?
+correspond to the case where the lowercase form has
+a dot while the uppercase form does not.
+These macro work due to the fact that the name of the macro \verb?\I?
+and \verb?\i? is conserved after \verb?\uppercase?--\verb?\lowercase?
+transformation, while in expressions
+\verb?`i? and \verb?`I? it is coverted appropriately.
+It is worth to note that although {\em then} and {\em else}
+parts of the macro are also affected by {\tt\bs{}uppercase}
+and {\tt\bs{}lowercase}, the results are correct:
+\begin{center}
+\begin{tabular}{r@{=}lr@{=}l}
+{\tt\bs{}uppercase\bs{}expandafter\{\bs{}i\}} & \uppercase\expandafter{\i}
+&
+{\tt\bs{}uppercase\bs{}expandafter\{\bs{}ii\}} & \uppercase\expandafter{\ii}
+\\
+{\tt\bs{}lowercase\bs{}expandafter\{\bs{}i\}} & \lowercase\expandafter{\i}
+&
+{\tt\bs{}lowercase\bs{}expandafter\{\bs{}ii\}} & \lowercase\expandafter{\ii}
+\\
+{\tt\bs{}uppercase\bs{}expandafter\{\bs{}I\}} & \uppercase\expandafter{\I}
+&
+{\tt\bs{}uppercase\bs{}expandafter\{\bs{}II\}} & \uppercase\expandafter{\II}
+\\
+{\tt\bs{}lowercase\bs{}expandafter\{\bs{}I\}} & \lowercase\expandafter{\I}
+&
+{\tt\bs{}lowercase\bs{}expandafter\{\bs{}II\}} & \lowercase\expandafter{\II}
+\end{tabular}
+\end{center}
+It is more or less evident that the combination
+``lowercase-i-without-dot'' + ``uppercase-I-with-dot''
+is of no interest, although corresponding macro could be created
+as well.
+
+Similar commands are intoduced for  {\sl \j/j} and {\sl J/\.J}.
+\begin{itemize}\item[]\begin{verbatim}
+\edef\temp{\the\j} \chardef\jdotless=\temp\relax
+\def\j{\ifnum`j=`\j \jdotless \else J\fi}
+\def\J{\ifnum`J=`\J J\else \jdotless \fi}
+\def\jj{\ifnum`j=`\j j\else \.J\fi}
+\def\JJ{\ifnum`J=`\J \.J\else j\fi}
+\end{verbatim}\end{itemize}
+
+It is essential that the commands \verb?\i? and \verb?\I?,
+\verb?\ii? and \verb?\II?, \verb?\j? and \verb?\J?,
+\verb?\jj? and \verb?\JJ? creates the correct forms
+when the commands \verb?\uppercase? and \verb?\lowercase?
+or \verb?\MakeUppercase? and \verb?\MakeLowercase?
+affect them. They also work correctly when there are
+additional upper and lower accents created by the commands from
+the section~\ref{S-commands}. It is worth to note that
+the invisible characters created by the commands {\tt\bs{}markchar}
+and {\tt\bs{}MARKCHAR} described in section~\ref{S-commandsI}
+are also transformed into each other
+after transformation by {\tt\bs{}uppercase}
+and {\tt\bs{}lowercase}.
+
+\subsection{Title letters `L+soft-sign' and `N+soft-sign'\label{S-title}}
+
+Similar problem of case-sensitivity exists
+in the writing systems for Serbian, Makedonian,
+Itelmen and Nganasan languages which use the ligatures
+`{\sl L+soft-sign}' and `{\sl N+soft-sign}':
+{\cyrfont \char1}, {\cyrfont \char9},
+{\cyrfont \char0}, {\cyrfont \char8}.
+Except the uppercase and the lowercase variants shown above
+there is also the `title' variant%
+     \footnote{The Dutch ligature {\sl IJ}
+               also have the title form.}
+which is composed from the uppercase {\cyrfont L} and {\cyrfont N}
+and the bowl from the {\em lowercase} soft-sign {\cyrfont \char126}.
+Such ligature is useful for titles where the first letter is the
+uppercase variant while the rest of the test is composed from
+the lowercase letters.
+
+The command {\tt\bs{}uppercase} applied to the title letter
+should transfer it into the normal uppercase form,
+and {\tt\bs{}lowercase}~--- into normal lowercase form.
+Changing {\tt\bs{}lccode}--{\tt\bs{}uccode} values
+for the title letters (which could help in this case)
+is not allowed in \LaTeXe{}, and
+the list {\tt\bs{}@uclclist} used in \LaTeXe{}
+to make lower/uppercase conversion is of no
+usage since different assignments are necessary
+for {\tt\bs{}uppercase} and {\tt\bs{}lowercase}.
+
+The following macro uses the same idea
+to distinguish {\tt\bs{}uppercase} and {\tt\bs{}lowercase}
+modes and to produce correct letter as the output:
+\begin{verbatim}
+\def\makeCYRlje{%
+   \ifnum`x=`\X        \CYRLJE  % there was \uppercase
+   \else \ifnum `X=`\x \cyrlje  % there was \lowercase
+   \else               \CYRlje  % natural title form
+   \fi\fi
+}
+\end{verbatim}
+Here {\tt \bs{}CYRLJE} corresponds to the uppercase form
+{\cyrfont \char1}, {\tt \bs{}cyrlje}~--- to the lowercase form
+{\cyrfont \char9}, and {\tt \bs{}CYRlje}~--- to the title
+form. Similar commands can be defined for the letter `N+soft-sign'.
+
+\section{Conditional operators \textsf{if-then-else}\label{S-ifthen}}
+
+Fine tuning of main characters and accents (modifiers) may require
+the analysis of the font style used for the composite construction.
+To make it easier, \textsc{accentbx} contains special
+\textsf{if-then-else} macro:
+\begin{description}
+
+\item[] \verb?\ifupper{?{\em character}\verb?}{?%
+              {\em if-upper}\verb?}{?{\em if-lower}\verb?}?~---
+        checks that you deal with the uppercase character:
+        first parameter is the character to be checked,
+        second~--- commands which are executed for {\em true},
+        third~--- commands to be executed for {\em false}.
+
+\item[] \verb?\iflower{?{\em character}\verb?}{?%
+              {\em if-upper}\verb?}{?{\em if-lower}\verb?}?~---
+        checks that you deal with the lowercase character:
+        first parameter is the character to be checked,
+        second~--- commands which are executed for {\em true},
+        third~--- commands to be executed for {\em false}.
+
+\item[]  \verb?\ifcaseupper{?%
+              {\em uppercase-or-none}\verb?}{?{\em lowercase}\verb?}?~---
+        checks that your construction was influenced by \verb?\lowercase?:
+        first group of commands is executed
+        if there was \verb?\uppercase? conversion or no conversion,
+        and second group of commands is executed
+        if there was \verb?\lowercase? conversion.
+
+\item[] \verb?\ifcaselower{?%
+              {\em lowercase-or-none}\verb?}{?{\em uppercase}\verb?}?~---
+        checks that your construction was influenced by \verb?\uppercase?:
+        first group of commands is executed
+        if there was \verb?\lowercase? conversion or no conversion,
+        and second group of commands is executed
+        if there was \verb?\uppercase? conversion.
+
+\item[] \verb?\ifcasetitle{?{\em no-case}\verb?}{?%
+              {\em uppercase}\verb?}{?{\em lowercase}\verb?}?~---
+        checks allthree variants:
+        first group of commands is executed if there is no conversion,
+        second~--- for  \verb?\uppercase? conversion, third~---
+        for \verb?\lowercase? conversion.
+
+\item[] \verb?\ifwide{?{\em character}\verb?}{?%
+              {\em if-wide}\verb?}{?{\em if-narrow}\verb?}?~---
+        checks that you deal with wide character (character
+        is considetred as wide if its width
+        is more than the value \verb?\accentwidefactor?
+        (default value for it is~\textsf{0.65em})).
+
+\item[] \verb?\ifwidth{?{\em character}\verb?}{?{\em width}\verb?}{?%
+              {\em if-wide}\verb?}{?{\em if-narrow}\verb?}?~---
+        just the same as \verb?\ifwide?, but the width for comparison
+        is specified explicitly as the second parameter.
+
+\item[] \textsf{if-then-else} operators for font families:
+       command
+       \verb?\ifrm{#1}{#2}? checks that you are in normal (upright roman) mode,
+       command
+       \verb?\ifit{#1}{#2}?~--- that you are in {\it italic} mode,
+       command
+       \verb?\ifsl{#1}{#2}?~--- that you are in {\sl slanted} mode,
+       command
+       \verb?\ifbf{#1}{#2}?~--- that you are in {\bf boldface} mode,
+       command
+       \verb?\ifsf{#1}{#2}?~--- that you are in {\sf sans serif} mode,
+       command
+       \verb?\ifsc{#1}{#2}?~--- that you are in {\sc small caps} mode,
+       command
+       \verb?\iftt{#1}{#2}?~--- that you are in {\tt typewriter} mode.
+There are also the commands \verb?\ifmit{#1}{#2}? and \verb?\ifsym{#1}{#2}?
+which checks that by some mistake you are in mathematical mode
+and are working with mathematical letters or mathematical symbols~---
+but these should never used in practice \hackersmile.
+
+\end{description}
+
+\section{Changes in version 1.4\label{S-new}}
+
+Version 1.4 is actually the first version which is uploaded to CTAN
+for wide distribution among \TeX-users. Previous version 1.3
+was distributed only between restricted set of people as a result
+of private communications. Nevertheless, the changes are
+the following:
+
+\begin{itemize}
+\item \verb?\aboxadjust? is renamed into \verb?\aboxshift?,
+\item \verb?\makeaccent?, \verb?\aboxframed? and \verb?\aboxtuning?
+      are added,
+\item commands \verb?\akern? and \verb?aboxmarker? appear,
+\item thickness and width od \verb?\aboxbar? is controlled now
+      by the User; macro \verb?\aboxrule? appeared,
+\item optional arguments are introduced for some commands
+      (by default, i.e., without such arguments, these commands
+      behave as it was in previous version),
+\item robust versions of the commands with optional arguments are included,
+\item family of \verb?\nullaccent...? commands is reviewed and
+      modified (it was safe because in the previous version
+      these commands were not documented and hence were not available
+      for the User),
+\item behaviour of \verb?\aboxbase? is changed~--- now it shifts
+      the character only if it has positive depthy value; for compatibility
+      with older application macro \verb?\aboxbaseline? which shifts
+      the character to its baseline always, is added,
+\item compatibility with {\sl Plain}, \AmS\TeX, etc., is checked
+      and some errors are corrected,
+\item internal macro \verb?\slant@value? is renamed and macro
+      \verb?\strip@pt? is deleted (since \LaTeXe{} also has such macro),
+\item \textsf{if-then-else} structures now have two or three
+      parameters~--- groups of commands to be executed when
+      corresponding condition is satisfied are specified explicitly,
+\item \textsf{if-then-else} structures for uppercase/lowercase
+      conversion and for title letters are added,
+\item Now you have more or less detailed documentation \hackersmile.
+\end{itemize}
+
+\section*{Acknowledgements}
+
+I am grateful to Olga Lapko, Mikhail Kolodin and Andrew Janishevskii
+for numerous useful discussions which result
+to the appearance of the style file {\sc accentbx}.
+The examples of \TeX{} programming demonstrated
+by Kees van der Laan helped to make the package {\sc accentbx}
+more effective and compact. The discussions with J\"org Knappen
+helped to understand better the base ideology of accents in T1 and EC/DC fonts.
+The extensive comments and recommendations of the first referee
+of this paper, Bernd Raichle, enabled to improve greatly the description
+of the {\tt\bs{}accent} algorithm in section~\ref{S-accent}
+and to correct numerous errors in suggested macro.
+Robin Fairbairns spent a lot of his time
+polishing the text of the first variant of this paper.
+I express my warmest thanks to all these \TeX{}nicians and \TeX{}perts.
+
+And I would like to thank separately
+Aaldert Compagner from Delft University of Technology for his
+long-term friendship and patient attention as a teacher~--- not
+necessarily relating to some \TeX{} or \LaTeX{} joint works.
+
+\begin{thebibliography}{00}
+\bibitem{DC} J\"org Knappen, documentation supplementary to
+        European Computer Modern font family.
+\bibitem{TEXB}
+        Donald E.\ Knuth.
+        The \TeX{}book.
+        Addison-Wesley, 1984 (reprinted with corrections in 1989).
+\bibitem{TOPIC}
+        Victor Eijkhout.
+        \TeX{} by Topic, a \TeX{}nician's Reference.
+        Addison-Wesley, 1991.
+\bibitem{SOL}
+        D.Salomon.
+        NTG's Advanced \TeX{} course: Insights \& Hindsights.
+        MAPS special issue, 1994.
+\bibitem{DRATEX}
+        Eitan M.\ Gurari. \TeX{} \& \LaTeX: drawing \&
+        literate programming. McGraw-Hill, Inc., 1994.
+\bibitem{Calc}
+        Kresten Krab Thorup and Frank Jensen,
+        The style file {\sc calc.sty} (infix notation
+        arithmetic in \LaTeX, version 4.0c).
+\bibitem{FP}
+        Michael Mehlich,
+        The package {\sl FP.sty} ({\em Fixed Point Package}),
+        version 0.8 (April 1995).
+\bibitem{Real}
+        Frank Buchholz,
+        The style file {\sc RealCalc.sty},
+        dated January 1993.
+\end{thebibliography}
+\endinput

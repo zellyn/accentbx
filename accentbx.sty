@@ -1,0 +1,671 @@
+%
+%  accentbx.sty  Version 1.4 (September 12, 2000)
+%  (C) 1997, 2000 Alexander Berdnikov (berd@ianin.spb.su)
+%
+%  Content:
+%
+%       macros for producing multiple, complex and exotix accents
+%       in Plain, AmsTeX, Latex 2.09 and LaTeX 2e
+%
+%  Please see the information in file `accentbx.tex'
+%  on how you may use this file.
+%
+%  This file may NOT be distributed
+%  if not accompanied by unmodified 'accentbx.tex'
+%
+
+\chardef\oldatcatcodevalue=\catcode`\@
+\catcode`\@=11
+
+%
+%  Allocate internal registers which are usually allocated in LaTeX
+%  and its packages/style files
+%
+\ifx\@tempcnta\undefined \newcount\@tempcnta \fi
+\ifx\@tempcntb\undefined \newcount\@tempcntb \fi
+\ifx\@tempdima\undefined \newdimen\@tempdima \fi
+\ifx\@tempdimb\undefined \newdimen\@tempdimb \fi
+\ifx\@tempdimc\undefined \newdimen\@tempdimc \fi
+\ifx\@tempdimd\undefined \newdimen\@tempdimd \fi
+\ifx\@tempdime\undefined \newdimen\@tempdime \fi
+\ifx\@tempboxa\undefined \newbox\@tempboxa   \fi
+\ifx\@tempboxb\undefined \newbox\@tempboxb   \fi
+
+%
+% Define \@ifnextchar if it is not defined
+%
+\ifx\@ifnextchar\undefined
+\def\@ifnextchar#1#2#3#4{%
+    \let\acc@tempe #1%
+    \def\acc@tempa{#2}%
+    \def\acc@tempb{#3}%
+    \let\acc@tempc #4%
+    \ifx\acc@tempe\acc@tempc%
+        \let\acc@temp=\acc@tempa%
+    \else%
+        \let\acc@temp=\acc@tempb%
+    \fi%
+    \acc@temp\acc@tempc%
+}
+\fi
+
+%
+% Cancel option construction
+%
+\def\acc@emptyoption#1\acc@endmacro{}
+
+%
+%  This procedure converts \fontdimen1
+%  into digital string without `pt'
+%  (the trick is suggested by Bernd Raichle and is based
+%  on {\tt\bs{}kslant} shown on p.375 of \TeX{}book).
+%
+{\catcode`p=12 \catcode`t=12 \gdef\acc@@@#1pt{#1}}
+\def\acc@slantvalue{\expandafter\acc@@@\the\fontdimen1\font}
+
+%
+%  Upper accents
+%
+\def\upaccentC#1#2{\leavevmode
+   \setbox\@tempboxa=\hbox{#2}\@tempdima=\wd\@tempboxa
+   \@tempdimb=\acc@slantvalue\ht\@tempboxa
+   \setbox\@tempboxb=\hbox to \@tempdima {\hss#1\hss}%
+   \kern\@tempdimb
+      \raise\ht\@tempboxa\box\@tempboxb\kern-\@tempdima
+   \kern-\@tempdimb
+   \unhbox\@tempboxa% NB: if \box\@tempboxa -- italic correction fails
+}
+\def\upaccentR#1#2{\leavevmode
+   \setbox\@tempboxa=\hbox{#2}\@tempdima=\wd\@tempboxa
+   \@tempdimb=\acc@slantvalue\ht\@tempboxa
+   \setbox\@tempboxb=\hbox to \@tempdima {\hss#1}%
+   \kern\@tempdimb
+      \raise\ht\@tempboxa\box\@tempboxb\kern-\@tempdima
+   \kern-\@tempdimb
+   \unhbox\@tempboxa% NB: if \box\@tempboxa -- italic correction fails
+}
+\def\upaccentL#1#2{\leavevmode
+   \setbox\@tempboxa=\hbox{#2}\@tempdima=\wd\@tempboxa
+   \@tempdimb=\acc@slantvalue\ht\@tempboxa
+   \setbox\@tempboxb=\hbox to \@tempdima {#1\hss}%
+   \kern\@tempdimb
+      \raise\ht\@tempboxa\box\@tempboxb\kern-\@tempdima
+   \kern-\@tempdimb
+   \unhbox\@tempboxa% NB: if \box\@tempboxa -- italic correction fails
+}
+\def\upaccent#1#2{\upaccentC{#1}{#2}}
+
+%
+%  Lower accents
+%
+\def\dnaccentC#1#2{\leavevmode
+   \setbox\@tempboxa=\hbox{#2}\@tempdima=\wd\@tempboxa
+   \@tempdimb=\acc@slantvalue\dp\@tempboxa
+   \setbox\@tempboxb=\hbox to \@tempdima {\hss#1\hss}%
+   \kern-\@tempdimb%
+      \lower\dp\@tempboxa%
+            \hbox{\lower\ht\@tempboxb\box\@tempboxb}\kern-\@tempdima
+   \kern\@tempdimb%
+   \unhbox\@tempboxa% NB: if \box\@tempboxa -- italic correction fails
+}
+\def\dnaccentR#1#2{\leavevmode
+   \setbox\@tempboxa=\hbox{#2}\@tempdima=\wd\@tempboxa
+   \@tempdimb=\acc@slantvalue\dp\@tempboxa
+   \setbox\@tempboxb=\hbox to \@tempdima {\hss#1}%
+   \kern-\@tempdimb%
+      \lower\dp\@tempboxa\hbox{\lower\ht\@tempboxb\box\@tempboxb}\kern-\@tempdima
+   \kern\@tempdimb%
+   \unhbox\@tempboxa% NB: if \box\@tempboxa -- italic correction fails
+}
+\def\dnaccentL#1#2{\leavevmode
+   \setbox\@tempboxa=\hbox{#2}\@tempdima=\wd\@tempboxa
+   \@tempdimb=\acc@slantvalue\dp\@tempboxa
+   \setbox\@tempboxb=\hbox to \@tempdima {#1\hss}%
+   \kern-\@tempdimb%
+      \lower\dp\@tempboxa\hbox{\lower\ht\@tempboxb\box\@tempboxb}\kern-\@tempdima
+   \kern\@tempdimb%
+   \unhbox\@tempboxa% NB: if \box\@tempboxa -- italic correction fails
+}
+\def\dnaccent#1#2{\dnaccentC{#1}{#2}}
+
+%
+%  Base line accents
+%
+\def\baseaccentC#1#2{\leavevmode%
+   \setbox\@tempboxa=\hbox{#2}%
+   \setbox\@tempboxb=\hbox to \wd\@tempboxa {\hss#1\hss}%
+   \lower\ht\@tempboxb\box\@tempboxb\kern-\wd\@tempboxa
+   \unhbox\@tempboxa% NB: if \box\@tempboxa -- italic correction fails
+}
+\def\baseaccentR#1#2{\leavevmode%
+   \setbox\@tempboxa=\hbox{#2}%
+   \setbox\@tempboxb=\hbox to \wd\@tempboxa {\hss#1}%
+   \lower\ht\@tempboxb\box\@tempboxb\kern-\wd\@tempboxa
+   \unhbox\@tempboxa% NB: if \box\@tempboxa -- italic correction fails
+}
+\def\baseaccentL#1#2{\leavevmode%
+   \setbox\@tempboxa=\hbox{#2}%
+   \setbox\@tempboxb=\hbox to \wd\@tempboxa {#1\hss}%
+   \lower\ht\@tempboxb\box\@tempboxb\kern-\wd\@tempboxa
+   \unhbox\@tempboxa% NB: if \box\@tempboxa -- italic correction fails
+}
+\def\baseaccent#1#2{\baseaccentC{#1}{#2}}
+
+%
+%  Body modifiers
+%
+\def\nullaccentC#1#2{\acc@genaccent[SsOo]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\nullaccentR#1#2{\acc@genaccent[SsRr]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\nullaccentL#1#2{\acc@genaccent[SsLl]<0pt,0pt,0pt,0pt>{#1}{#2}}
+\def\nullaccent#1#2{\nullaccentC{#1}{#2}}
+
+%
+%  Adjust the character which usually is used for \accent command
+%
+\def\aboxshift{\@ifnextchar[{\abox@shift}{\abox@shift[1ex]}}
+\def\Aboxshift#1{\abox@shift[1ex]{#1}}
+\def\AboxShift#1#2{\abox@shift[#1]{#2}}
+\def\abox@shift[#1]#2{\leavevmode
+   \@tempdima=#1\relax \@tempdima=\acc@slantvalue\@tempdima
+   \setbox\@tempboxb=\hbox{\lower#1%
+                  \hbox{\kern-\@tempdima\hbox{#2}\kern\@tempdima}}%
+   \dp\@tempboxb=0pt\box\@tempboxb%
+}
+
+%
+%  Shift the character above the baseline
+%
+\def\aboxbase{\@ifnextchar[{\abox@base}{\abox@base[0pt]}}
+\def\Aboxbase#1{\abox@base[0pt]{#1}}
+\def\AboxBase#1#2{\abox@base[#1]{#2}}
+\def\abox@base[#1]#2{%
+   \setbox\@tempboxb=\hbox{\raise#1\hbox{#2}}%
+   \ifdim\dp\@tempboxb>0pt
+      \raise\dp\@tempboxb\hbox{\box\@tempboxb}%
+   \else
+      \box\@tempboxb
+   \fi
+}
+\def\aboxbaseline#1{%
+   \setbox\@tempboxb=\hbox{#1}%
+   \raise\dp\@tempboxb\hbox{\box\@tempboxb}%
+}
+
+%
+%  Adjust accent frame and position:
+%
+%       \aboxtuning{right,height,left,depth,baseline}{object}
+%
+%       \aboxframed[options]{object}
+%
+%  Options:
+%    u - increase height by one step
+%    d - increase depth by one step
+%    r - increase right space by one step
+%    l - increase left space by one step
+%    b - raise baseline by one step
+%    U - decrease height by one step
+%    D - decrease depth by one step
+%    R - decrease right space by one step
+%    L - decrease left space by one step
+%    B - lower baseline by one step
+%
+% Several options are equivalent to several steps
+% Hor. zize is changed by \aboxframestepH,
+% vert. size is changed by \aboxframestepV
+%
+\def\aboxtuning#1#2{%
+    \setbox\@tempboxa=\hbox{#2}%
+    \@tempdima=0pt\@tempdimc=0pt\@tempdime=0pt%
+    \@tempdimb=0pt\@tempdimd=0pt%
+    \edef\acc@temp{#1}%
+    \expandafter\acc@gener@shift\acc@temp,,,,,\acc@endmacro % process options
+    \advance\@tempdimb by \ht\@tempboxa \ht\@tempboxa=\@tempdimb
+    \advance\@tempdimd by \dp\@tempboxa \dp\@tempboxa=\@tempdimd
+    \raise\@tempdime\hbox{\kern\@tempdimc\box\@tempboxa\kern\@tempdima}
+}
+\def\aboxframestepV{0.2ex}
+\def\aboxframestepH{0.08em}
+\def\aboxframed{\@ifnextchar[{\abox@framed}{\abox@framed[ud]}}
+\def\Aboxframed#1{\abox@framed[ud]{#1}}
+\def\AboxFramed#1#2{\abox@framed[#1]{#2}}
+\def\abox@framed[#1]#2{%
+    \edef\acc@aboxframestepH{\aboxframestepH}%
+    \edef\acc@aboxframestepV{\aboxframestepV}%
+    \setbox\@tempboxa=\hbox{#2}%
+    \@tempdima=0pt\@tempdimc=0pt\@tempdime=0pt%
+    \@tempdimb=0pt\@tempdimd=0pt%
+    \edef\acc@temp{#1}%
+    \expandafter\acc@abox@option\acc@temp\acc@endmacro % process options
+    \advance\@tempdimb by \ht\@tempboxa \ht\@tempboxa=\@tempdimb
+    \advance\@tempdimd by \dp\@tempboxa \dp\@tempboxa=\@tempdimd
+    \raise\@tempdime\hbox{\kern\@tempdimc\box\@tempboxa\kern\@tempdima}
+}
+% extract option character
+\def\acc@abox@option#1\acc@endmacro{%
+    \def\acc@temp{#1}%
+    \ifx\acc@temp\empty
+        \let\acc@temp=\acc@emptyoption
+    \else
+        \let\acc@temp=\acc@abox@@option
+    \fi
+    \acc@temp#1\acc@endmacro
+}
+% analyze option character, goto next
+\def\acc@abox@@option#1#2\acc@endmacro{%
+    \csname acc@frame@#1\endcsname
+    \acc@abox@option#2\acc@endmacro
+}
+% list of options:
+\def\acc@frame@u{\advance\@tempdimb by  \acc@aboxframestepV\relax}
+\def\acc@frame@d{\advance\@tempdimd by  \acc@aboxframestepV\relax}
+\def\acc@frame@r{\advance\@tempdima by  \acc@aboxframestepH\relax}
+\def\acc@frame@l{\advance\@tempdimc by  \acc@aboxframestepH\relax}
+\def\acc@frame@b{\advance\@tempdime by  \acc@aboxframestepH\relax}
+\def\acc@frame@U{\advance\@tempdimb by -\acc@aboxframestepV\relax}
+\def\acc@frame@D{\advance\@tempdimd by -\acc@aboxframestepV\relax}
+\def\acc@frame@R{\advance\@tempdima by -\acc@aboxframestepH\relax}
+\def\acc@frame@L{\advance\@tempdimc by -\acc@aboxframestepH\relax}
+\def\acc@frame@B{\advance\@tempdime by -\acc@aboxframestepH\relax}
+
+%
+%  Add space around the accent
+%
+\def\aboxsplit{\@ifnextchar[{\abox@split}{\abox@split[0.2ex]}}
+\def\Aboxsplit#1{\abox@split[0.2ex]{#1}}
+\def\AboxSplit#1#2{\abox@split[#1]{#2}}
+\def\abox@split[#1]#2{%
+   \setbox0=\hbox{\raise#1\hbox{#2}}%
+   \@tempdima=\ht0 \advance\@tempdima by #1\relax \ht0=\@tempdima
+   \box0%
+}
+%  (for upper accent)
+\def\aboxsplitup{\@ifnextchar[{\abox@splitup}{\abox@splitup[0.2ex]}}
+\def\Aboxsplitup#1{\abox@splitup[0.2ex]{#1}}
+\def\AboxSplitup#1#2{\abox@splitup[#1]{#2}}
+\def\abox@splitup[#1]#2{%
+   \setbox0=\hbox{\raise#1\hbox{#2}}%
+   \box0%
+}
+%  (for lower accent)
+\def\aboxsplitdn{\@ifnextchar[{\abox@splitdn}{\abox@splitdn[0.2ex]}}
+\def\Aboxsplitdn#1{\abox@splitdn[0.2ex]{#1}}
+\def\AboxSplitdn#1#2{\abox@splitdn[#1]{#2}}
+\def\abox@splitdn[#1]#2{%
+   \setbox0=\hbox{#2}%
+   \@tempdima=\ht0 \advance\@tempdima by #1\relax \ht0=\@tempdima
+   \box0%
+}
+
+%
+%  Delete frame around the character
+%
+\def\aboxjoin{\@ifnextchar[{\abox@join}{\abox@join[0.1ex]}}
+\def\Aboxjoin#1{\abox@join[0.1ex]{#1}}
+\def\AboxJoin#1#2{\abox@join[#1]{#2}}
+\def\abox@join[#1]#2{%
+   \setbox0=\hbox{\lower#1\hbox{#2}}%
+   \@tempdima=\ht0 \advance\@tempdima by -#1\relax \ht0=\@tempdima
+   \@tempdima=\dp0 \advance\@tempdima by -#1\relax \dp0=\@tempdima
+   \box0%
+}
+%  (for upper accent)
+\def\aboxjoinup{\@ifnextchar[{\abox@joinup}{\abox@joinup[0.2ex]}}
+\def\Aboxjoinup#1{\abox@joinup[0.2ex]{#1}}
+\def\AboxJoinup#1#2{\abox@joinup[#1]{#2}}
+\def\abox@joinup[#1]#2{%
+   \setbox0=\hbox{\lower#1\hbox{#2}}%
+   \@tempdima=\dp0 \advance\@tempdima by -#1\relax \dp0=\@tempdima
+   \box0%
+}
+%  (for lower accent)
+\def\aboxjoindn{\@ifnextchar[{\abox@joindn}{\abox@joindn[0.2ex]}}
+\def\Aboxjoindn#1{\abox@joindn[0.2ex]{#1}}
+\def\AboxJoindn#1#2{\abox@joindn[#1]{#2}}
+\def\abox@joindn[#1]#2{%
+   \setbox0=\hbox{\raise#1\hbox{#2}}%
+   \@tempdima=\ht0 \advance\@tempdima by -#1\relax \ht0=\@tempdima
+   \box0%
+}
+
+%
+%  Make the character to be a null box in vertical direction
+%
+\def\aboxnull#1{%
+   \setbox\@tempboxb=\hbox{#1}%
+   \ht\@tempboxb=0pt\dp\@tempboxb=0pt\box\@tempboxb%
+}
+
+%
+%  Make the `bar character' with necessary thickness and length
+%
+\def\accentthickness{0.1}
+\def\accentwidthfactor{0.9}
+\def\aboxbar#1{%
+   \setbox\@tempboxa=\hbox{#1}%
+   \setbox\@tempboxb=\hbox{.}%
+   \vrule height \accentthickness\ht\@tempboxb%
+          depth  \accentthickness\ht\@tempboxb%
+          width  \accentwidthfactor\wd\@tempboxa%
+}
+\def\aboxrule#1{%
+   \setbox\@tempboxb=\hbox{.}%
+   \vrule height \accentthickness\ht\@tempboxb%
+          depth  \accentthickness\ht\@tempboxb%
+          width  #1\relax
+}
+
+%
+%  Upper bar accent
+%
+\def\upaccentbar{\@ifnextchar[{\upaccent@bar}{\upaccent@bar[0.2ex]}}
+\def\Upaccentbar#1{\upaccent@bar[0.2ex]{#1}}
+\def\UpaccentBar#1#2{\upaccent@bar[#1]{#2}}
+\def\upaccent@bar[#1]#2{%
+    \upaccent{\aboxsplit[#1]{\aboxbar{#2}}}{#2}%
+}
+
+%
+%  Lower bar accent
+%
+\def\dnaccentbar{\@ifnextchar[{\dnpaccent@bar}{\dnaccent@bar[0.2ex]}}
+\def\Dnaccentbar#1{\dnaccent@bar[0.2ex]{#1}}
+\def\DnaccentBar#1#2{\dnaccent@bar[#1]{#2}}
+\def\dnaccent@bar[#1]#2{%
+    \dnaccent{\aboxsplit[#1]{\aboxbar{#2}}}{#2}%
+}
+
+%
+% General purpose accents:
+%         \makeaccent [alignments] <shifts> {accent} {character}
+% Alignments:
+%   r - right side of the character
+%   l - left side of the character
+%   o - hor. center of the character (default)
+%   t - top of the character (default)
+%   d - bottom of the character
+%   b - baseline of the character
+%   c - vert. center of the character
+%   s - 0.5 height of the character
+%   z - 0.5 depth of the character
+%   R - right side of the accent
+%   L - left side of the accent
+%   O - hor. center of the accent (default)
+%   T - top of the accent
+%   D - bottom of the accent (default)
+%   B - baseline of the accent
+%   C - vert. center of the accent
+%   S - 0.5 height of the accent
+%   Z - 0.5 depth of the accent
+%
+%
+\def\makeaccent{\@ifnextchar[{\acc@generaccentI}{\acc@generaccent}}
+\def\Makeaccent#1#2{\acc@genaccent[]<>{#1}{#2}}
+\def\MakeAccent#1#2#3#4{\acc@genaccent[#1]<#2>{#3}{#4}}
+\def\acc@generaccent{\@ifnextchar<{\acc@generaccentJ}{\acc@genaccent[]<>}}
+\def\acc@generaccentI[#1]{%
+    \@ifnextchar<{\acc@genaccent[#1]}{\acc@genccent[#1]<>}%
+}
+\def\acc@generaccentJ<#1>{%
+    \@ifnextchar[{\acc@genaccentK<#1>}{\acc@genccent[]<#1>}%
+}
+\def\acc@generaccentK<#1>[#2]{\acc@genaccent[#2]<#1>}
+\def\acc@genaccent[#1]<#2>#3#4{\leavevmode
+    \setbox\@tempboxa=\hbox{#4}% character
+    \setbox\@tempboxb=\hbox{#3}% accent
+    % shifts by default
+    \@tempdima=0.5\wd\@tempboxa\@tempdimc=\ht\@tempboxa % for character
+    \@tempdimb=0.5\wd\@tempboxb\@tempdimd=0pt\@tempdime=0pt % for accent
+    \edef\acc@temp{#1}%
+    \expandafter\acc@gener@option\acc@temp\acc@endmacro % process options
+    \generaccentA % user-defined fine shift tuning (A)
+    \edef\acc@temp{#2}%
+    \expandafter\acc@gener@shift\acc@temp,,,,,\acc@endmacro % process shifts
+    \generaccentB % user-defined fine shift tuning (A)
+    % coordinates of the accent
+    \advance\@tempdima by -\@tempdimb
+    \advance\@tempdimc by -\@tempdimd
+    \@tempdimb=\acc@slantvalue\@tempdimc
+    \advance\@tempdima by \@tempdimb
+    \setbox\@tempboxb=\hbox{\kern\@tempdima\raise\@tempdimc\box\@tempboxb}%
+    % put accent, correct height and depth but not width
+    \wd\@tempboxb=0pt\box\@tempboxb
+    \unhbox\@tempboxa% NB: if \box\@tempboxa -- italic correction fails
+}
+% fine shift tuning -- defined by User if necessary
+\def\generaccentA{}
+\def\generaccentB{}
+% extract shifts
+\def\acc@gener@shift#1,#2,#3,#4,#5,#6\acc@endmacro{%
+    \def\acc@temp{#1}\ifx\acc@temp\empty
+                     \else\advance\@tempdima by #1\relax\fi
+    \def\acc@temp{#2}\ifx\acc@temp\empty
+                     \else\advance\@tempdimc by #2\relax\fi
+    \def\acc@temp{#3}\ifx\acc@temp\empty
+                     \else\advance\@tempdimb by #3\relax\fi
+    \def\acc@temp{#4}\ifx\acc@temp\empty
+                     \else\advance\@tempdimd by #4\relax\fi
+    \def\acc@temp{#5}\ifx\acc@temp\empty
+                     \else\advance\@tempdimd by #4\relax\fi
+}
+% extracts next option character
+\def\acc@gener@option#1\acc@endmacro{%
+    \def\acc@temp{#1}%
+    \ifx\acc@temp\empty
+        \let\acc@temp=\acc@emptyoption
+    \else
+        \let\acc@temp=\acc@gener@@option
+    \fi
+    \acc@temp#1\acc@endmacro
+}
+% analyze next option character, goto next
+\def\acc@gener@@option#1#2\acc@endmacro{%
+    \csname acc@option@#1\endcsname
+    \acc@gener@option#2\acc@endmacro
+}
+% list of options:
+\def\acc@option@r{\@tempdima=0pt} % right side of the character
+\def\acc@option@l{\@tempdima=\wd\@tempboxa} % left side of the character
+\def\acc@option@o{\@tempdima=0.5\wd\@tempboxa} % hor. center of the character
+\def\acc@option@t{\@tempdimc=\ht\@tempboxa} % top of the character
+\def\acc@option@d{\@tempdimc=-\dp\@tempboxa} % bottom of the character
+\def\acc@option@b{\@tempdimc=0pt} % baseline of the character
+\def\acc@option@c{% vert. center of the character
+    \@tempdimc=0.5\ht\@tempboxa
+    \advance\@tempdimc by -0.5\dp\@tempboxa
+}
+\def\acc@option@s{% 0.5 height of the character
+    \@tempdimc=0.5\ht\@tempboxa
+}
+\def\acc@option@z{% 0.5 depth of the character
+    \@tempdimc=-0.5\dp\@tempboxa
+}
+\def\acc@option@R{\@tempdimb=0pt} % right side of the accent
+\def\acc@option@L{\@tempdimb=\wd\@tempboxb} % left side of the accent
+\def\acc@option@O{\@tempdimb=0.5\wd\@tempboxb} % hor. center of the accent
+\def\acc@option@T{\@tempdimd=\ht\@tempboxb} % top of the accent
+\def\acc@option@D{\@tempdimd=-\dp\@tempboxb} % bottom of the accent
+\def\acc@option@B{\@tempdimd=0pt} % baseline of the accent
+\def\acc@option@C{% vert. center of the accent
+    \@tempdimd=0.5\ht\@tempboxb
+    \advance\@tempdimd by -0.5\dp\@tempboxb
+}
+\def\acc@option@S{% 0.5 height of the accent
+    \@tempdimd=0.5\ht\@tempboxb
+}
+\def\acc@option@Z{% 0.5 depth of the accent
+    \@tempdimd=-0.5\dp\@tempboxb
+}
+
+%
+%  Commands for:
+%    \i  = dotless-i, \I  = dotless-I
+%    \ii = dotted-i,  \II = dotted-I
+%  which are sensitive to \uppercase and \lowercase
+%
+\edef\@tempa{\the\i} \chardef\idotless=\@tempa\relax
+\def\i{\ifnum`i=`\i \idotless \else I\fi}
+\def\I{\ifnum`I=`\I I\else \idotless \fi}
+\def\ii{\ifnum`i=`\i i\else \.I\fi}
+\def\II{\ifnum`I=`\I \.I\else i\fi}
+
+%
+%  Commands for:
+%    \j  = dotless-j, \J  = dotless-J
+%    \jj = dotted-j,  \JJ = dotted-J
+%  which are sensitive to \uppercase and \lowercase
+%
+\edef\@tempa{\the\j} \chardef\jdotless=\@tempa\relax
+\def\j{\ifnum`j=`\j \jdotless \else J\fi}
+\def\J{\ifnum`J=`\J J\else \jdotless \fi}
+\def\jj{\ifnum`j=`\j j\else \.J\fi}
+\def\JJ{\ifnum`J=`\J \.J\else j\fi}
+
+%
+% Commands for invisible \vrule which has the height of
+% the uppercase letter after \uppercase, and the height of
+% the lowercase letter after \lowercase
+%
+\def\markchar{%
+    \setbox\@tempboxb=\hbox{\char`x}\vrule height \ht\@tempboxb width 0pt depth 0pt%
+}
+\def\MARKCHAR{%
+    \setbox\@tempboxb=\hbox{\char`X}\vrule height \ht\@tempboxb width 0pt depth 0pt%
+}
+\def\aboxmarker#1{%
+   \@tempdima=0pt\@tempdimb=0pt%
+   \setbox\@tempboxb=\hbox{#1}%
+   \ifdim\@tempdima<\ht\@tempboxb\@tempdima=\ht\@tempboxb\fi
+   \ifdim\@tempdimb<\dp\@tempboxb\@tempdimb=\dp\@tempboxb\fi
+   \vrule height \@tempdima width 0pt depth \@tempdimb
+}
+\def\marktwochar#1#2{%
+   \@tempdima=0pt\@tempdimb=0pt%
+   \setbox\@tempboxb=\hbox{#1}%
+   \ifdim\@tempdima<\ht\@tempboxb\@tempdima=\ht\@tempboxb\fi
+   \ifdim\@tempdimb<\dp\@tempboxb\@tempdimb=\dp\@tempboxb\fi
+   \setbox\@tempboxb=\hbox{#2}%
+   \ifdim\@tempdima<\ht\@tempboxb\@tempdima=\ht\@tempboxb\fi
+   \ifdim\@tempdimb<\dp\@tempboxb\@tempdimb=\dp\@tempboxb\fi
+   \vrule height \@tempdima width 0pt depth \@tempdimb
+}
+
+%
+% Command for kerning
+%
+\def\akern#1#2{%
+    \setbox\@tempboxb=\hbox{#1\kern0pt#2}%
+    \setbox2=\hbox{#1#2}%
+    \dimen0=\wd2%
+    \advance\dimen0 by -\wd\@tempboxb%
+    \kern\dimen0%
+}
+
+%
+%  Commands which check uppercase/lowercase state
+%  (for letters and symbols only)
+%
+\def\ifupper#1#2#3{\ifnum`#1=\uccode`#1 #2\else#3\fi}
+\def\iflower#1#2#3{\ifnum`#1=\lccode`#1 #2\else#3\fi}
+
+%
+% Commands which check \uppercase
+% and \lowercase conversion (robust!)
+%
+\def\ifcaseupper#1#2{\ifnum`X=\uccode`X#1\else#2\fi}
+\def\ifcaselower#1#2{\ifnum`x=\lccode`x#1\else#2\fi}
+\def\ifcasetitle#1#2#3{%
+    \ifx xX #1% there was no conversion
+    \else%
+        \ifnum`X=\uccode`X #2\else #3\fi% uppercase/lowercase
+    \fi%
+}
+
+%
+%  Command which check the width of the object
+%
+\def\accentwidefactor{0.65em}
+\def\ifwide#1#2#3{%
+    \setbox\@tempboxb=\hbox{#1}%
+    \ifdim\wd\@tempboxb>\accentwidefactor #2\else#3\fi%
+}
+\def\ifwidth#1#2#3#4{%
+    \setbox\@tempboxb=\hbox{#1}%
+    \ifdim\wd\@tempboxb>#2\relax#3\else\relax#4\fi%
+}
+
+%
+%  Commands which check the font family
+%
+
+% for Plain, AmSTeX, LaTeX 2.09, ...
+\def\check@accents@for@old@latex{%
+    \gdef\if@rm{\ifnum\fam=\z@}
+    \gdef\if@mit{\ifnum\fam=\@ne}
+    \gdef\if@sym{\ifnum\fam=\tw@}
+    \gdef\if@it{\ifnum\fam=\itfam}
+    \gdef\if@sl{\ifnum\fam=\slfam}
+    \gdef\if@bf{\ifnum\fam=\bffam}
+    \gdef\if@tt{\ifnum\fam=\ttfam}
+    \gdef\if@sf{\ifnum\fam=\sffam}
+    \gdef\if@sc{\ifnum\fam=\scfam}
+}
+
+% for LaTeX 2e in OT1/T1/OT2 encodings
+\def\check@accents@for@new@latex{%
+    \gdef\cmfamily@prefix{cm}
+    \gdef\if@rm{%
+        \edef\acc@temp@i{\cmfamily@prefix r}% ! check that family = cmr
+        \ifx\f@family\acc@temp@i\def\acc@temp{y}\else\def\acc@temp{n}\fi
+        \def\acc@temp@i{m}% ! check that series = m
+        \ifx\f@series\acc@temp@i\else\def\acc@temp{n}\fi
+        \def\acc@temp@i{n}% ! check that shape = n
+        \ifx\f@shape\acc@temp@i\else\def\acc@temp{n}\fi
+        \def\acc@temp@i{y}\ifx\acc@temp\acc@temp@i %! only for cmr/m/n
+    }
+    \gdef\if@mit{\ifnum\fam=\@ne}
+    \gdef\if@sym{\ifnum\fam=\tw@}
+    \gdef\if@it{\def\acc@temp{it}\ifx\acc@temp\f@shape}
+    \gdef\if@sl{\def\acc@temp{sl}\ifx\acc@temp\f@shape}
+    \gdef\if@bf{\def\acc@temp{bx}\ifx\acc@temp\f@series}
+    \gdef\if@tt{\def\acc@temp{n}%
+        \edef\acc@temp@i{\cmfamily@prefix tt}% ! check that family = cmtt
+        \ifx\f@family\acc@temp@i\def\acc@temp{y}\fi
+        \edef\acc@temp@i{l\cmfamily@prefix tt}% ! check that family = lcmtt
+        \ifx\f@family\acc@temp@i\def\acc@temp{y}\fi
+        \edef\acc@temp@i{\cmfamily@prefix vtt}% ! check that family = cmvtt
+        \ifx\f@family\acc@temp@i\def\acc@temp{y}\fi
+        \def\acc@temp@i{y}\ifx\acc@temp\acc@temp@i
+    }
+    \gdef\if@sf{\def\acc@temp{n}%
+        \edef\acc@temp@i{\cmfamily@prefix ss}% ! check that family = cmss
+        \ifx\f@family\acc@temp@i\def\acc@temp{y}\fi
+        \edef\acc@temp@i{l\cmfamily@prefix ss}% ! check that family = lcmss
+        \ifx\f@family\acc@temp@i\def\acc@temp{y}\fi
+        \def\acc@temp@i{y}\ifx\acc@temp\acc@temp@i
+    }
+    \gdef\if@sc{\def\acc@temp{sc}\ifx\acc@temp\f@shape}
+}
+
+\def\ifrm#1#2{\if@rm#1\else#2\fi}
+\def\ifmit#1#2{\if@mit#1\else#2\fi}
+\def\ifsym#1#2{\if@sym#1\else#2\fi}
+\def\ifit#1#2{\if@it#1\else#2\fi}
+\def\ifsl#1#2{\if@sl#1\else#2\fi}
+\def\ifbf#1#2{\if@bf#1\else#2\fi}
+\def\iftt#1#2{\if@tt#1\else#2\fi}
+\def\ifsf#1#2{\if@sf#1\else#2\fi}
+\def\ifsc#1#2{\if@sc#1\else#2\fi}
+
+\ifx\documentclass\undefined
+    \check@accents@for@old@latex
+\else
+    \check@accents@for@new@latex
+\fi
+
+%
+%  restore \catcode
+%
+\catcode`\@=\oldatcatcodevalue
+\endinput
+% end-of-file
