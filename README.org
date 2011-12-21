@@ -1,0 +1,7 @@
+* accentbx.sty
+
+The accent style file described in
+[[http://www.eutypon.gr/eutypon/pdf/e2000-05/e05-a04.pdf]].
+
+Note: I am not the author. I just managed to track down the .sty file
+and put it online.
